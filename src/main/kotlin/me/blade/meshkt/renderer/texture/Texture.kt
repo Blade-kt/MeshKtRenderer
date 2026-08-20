@@ -2,7 +2,6 @@ package me.blade.meshkt.renderer.texture
 
 import me.blade.meshkt.renderer.MeshEngine
 import me.blade.meshkt.renderer.resource.MeshResource
-import me.blade.meshkt.renderer.resource.MeshDef3rredContext
 import me.blade.meshkt.renderer.resource.MeshSyncContext
 import org.lwjgl.opengl.GL45C.*
 
@@ -10,7 +9,6 @@ import org.lwjgl.opengl.GL45C.*
 class Texture(
     descriptor: Descriptor
 ) : MeshResource() {
-    @MeshDef3rredContext
     class Descriptor {
         var target: TextureTarget? = null
 

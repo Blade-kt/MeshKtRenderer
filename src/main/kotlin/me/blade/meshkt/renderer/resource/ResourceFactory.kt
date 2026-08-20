@@ -19,7 +19,7 @@ class ResourceFactory(
         synchronized(resources) {
             resources.remove(resource)
 
-            engine.dispatcher.scope.launch {
+            engine.dispatcher.launch {
                 invokePrivate(resource, "free")
             }
         }

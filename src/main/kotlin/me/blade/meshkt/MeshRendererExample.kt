@@ -39,7 +39,6 @@ object MeshRendererExample {
             glViewport(0, 0, width, height)
         }
 
-
         while (true) {
             if (GLFW.glfwWindowShouldClose(window)) {
                 break
@@ -47,12 +46,12 @@ object MeshRendererExample {
 
             glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT)
             MeshRenderer.dispatcher.execute()
-            MeshRenderer.deferredDispatcher.execute()
 
             GLFW.glfwSwapBuffers(window)
             GLFW.glfwPollEvents()
         }
 
+        MeshRenderer.dispatcher.close()
         glfwDestroyWindow(window)
         glfwTerminate()
     }

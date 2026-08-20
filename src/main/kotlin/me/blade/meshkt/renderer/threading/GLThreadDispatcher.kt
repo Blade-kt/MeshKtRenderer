@@ -12,8 +12,10 @@ import kotlinx.coroutines.suspendCancellableCoroutine
 import me.blade.meshkt.renderer.resource.MeshSyncContext
 import org.lwjgl.glfw.GLFW
 import java.util.List.copyOf
+import java.util.logging.Logger
 import kotlin.coroutines.CoroutineContext
 import kotlin.coroutines.resume
+import kotlin.math.log
 
 /**
  * A thread dispatcher for GLFW rendering operations that provides coroutine support
@@ -55,15 +57,12 @@ class GLThreadDispatcher(
     private val pullingStrategy: ActionPullingStrategy = ActionPullingStrategy.Allocative
 ) {
     private val pendingActions = mutableListOf<Runnable>()
-    private val postPendingActions = mutableListOf<Runnable>()
+    private val chainedActions = mutableListOf<Runnable>()
+
     private var renderThread: Thread? = null
     private val synchronizationLock = Any()
 
-    private val deferredDispatcher = object : CoroutineDispatcher() {
-        override fun dispatch(context: CoroutineContext, block: Runnable): Unit = synchronized(synchronizationLock) {
-            pendingActions.add(block)
-        }
-    }
+    private val logger = Logger.getLogger("MeshKt - GLThreadDispatcher")
 
     private val adaptiveDispatcher = object : CoroutineDispatcher() {
         override fun dispatch(context: CoroutineContext, block: Runnable): Unit = synchronized(synchronizationLock) {
@@ -76,43 +75,58 @@ class GLThreadDispatcher(
         }
     }
 
-    private val postExecutionDispatcher = object : CoroutineDispatcher() {
+    private val deferredDispatcher = object : CoroutineDispatcher() {
         override fun dispatch(context: CoroutineContext, block: Runnable): Unit = synchronized(synchronizationLock) {
-            postPendingActions.add(block)
+            pendingActions.add(block)
         }
     }
 
-    private val deferredScope = CoroutineScope(deferredDispatcher + SupervisorJob())
+    private val chainedDispatcher = object : CoroutineDispatcher() {
+        override fun dispatch(context: CoroutineContext, block: Runnable): Unit = synchronized(synchronizationLock) {
+            chainedActions.add(block)
+        }
+    }
+
     private val adaptiveScope = CoroutineScope(adaptiveDispatcher + SupervisorJob())
-    private val postExecutionScope = CoroutineScope(postExecutionDispatcher + SupervisorJob())
+    private val deferredScope = CoroutineScope(deferredDispatcher + SupervisorJob())
+    private val chainedScope = CoroutineScope(chainedDispatcher + SupervisorJob())
+
+    /**
+     * Returns the number of pending actions in the main queue.
+     * Thread-safe.
+     */
+    val pendingActionCount: Int
+        get() = synchronized(synchronizationLock) {
+            pendingActions.size
+        }
+
+    /**
+     * Returns the number of pending actions in the chained (lazy) queue.
+     * Thread-safe.
+     */
+    val chainedActionCount: Int
+        get() = synchronized(synchronizationLock) {
+            chainedActions.size
+        }
+
+    /**
+     * Returns the total number of pending actions across all queues.
+     * Thread-safe.
+     */
+    val totalPendingActionCount: Int
+        get() = synchronized(synchronizationLock) {
+            pendingActions.size + chainedActions.size
+        }
 
     /**
      * Launches a new coroutine that will execute on the render thread.
      *
-     * @param forceDefer If `true`, the coroutine will always execute in the next frame.
-     *   If `false` (default), the coroutine executes immediately if called from the render thread,
-     *   otherwise it defers to the next frame.
+     * @param strategy The execution strategy. Defaults to [ExecutionStrategy.Adaptive]. (see: [ExecutionStrategy])
      * @param block The suspending block to execute on the render thread.
      * @return A [Job] representing the launched coroutine.
-     *
-     * ## Example:
-     * ```kotlin
-     * // Will execute immediately if on render thread
-     * glDispatcher.launch {
-     *     updateMesh()
-     * }
-     *
-     * // Will always execute next frame
-     * glDispatcher.launch(forceDefer = true) {
-     *     cleanupResources()
-     * }
-     * ```
      */
-    fun launch(forceDefer: Boolean = false, block: suspend () -> Unit): Job {
-        val scope = when (forceDefer) {
-            true -> deferredScope
-            else -> adaptiveScope
-        }
+    fun launch(strategy: ExecutionStrategy = ExecutionStrategy.Adaptive, block: suspend () -> Unit): Job {
+        val scope = strategy.getExecutionScope()
 
         return scope.launch {
             block()
@@ -120,29 +134,14 @@ class GLThreadDispatcher(
     }
 
     /**
-     * Launches a new coroutine that will execute on the render thread and returns a deferred result.
+     * Launches a new coroutine that returns a deferred result on the render thread.
      *
-     * @param forceDefer If `true`, the coroutine will always execute in the next frame.
-     *   If `false` (default), the coroutine executes immediately if called from the render thread,
-     *   otherwise it defers to the next frame.
+     * @param strategy The execution strategy. Defaults to [ExecutionStrategy.Adaptive]. (see: [ExecutionStrategy])
      * @param block The suspending block to execute on the render thread.
      * @return A [Deferred] representing the asynchronous computation.
-     *
-     * ## Example:
-     * ```kotlin
-     * val deferred = glDispatcher.async {
-     *     loadTexture("player.png")
-     * }
-     *
-     * // Await the result (will suspend)
-     * val texture = deferred.await()
-     * ```
      */
-    fun <R> async(forceDefer: Boolean = false, block: suspend () -> R): Deferred<R> {
-        val scope = when (forceDefer) {
-            true -> deferredScope
-            else -> adaptiveScope
-        }
+    fun <R> async(strategy: ExecutionStrategy = ExecutionStrategy.Adaptive, block: suspend () -> R): Deferred<R> {
+        val scope = strategy.getExecutionScope()
 
         return scope.async {
             block()
@@ -150,59 +149,13 @@ class GLThreadDispatcher(
     }
 
     /**
-     * Suspends the current coroutine until all pending actions have been processed.
-     *
-     * This is useful when you need to ensure that all queued rendering operations
-     * have completed before proceeding.
-     *
-     * ## Example:
-     * ```kotlin
-     * // From a background thread
-     * glDispatcher.launch {
-     *     loadTextures()
-     * }
-     *
-     * // Wait for all texture loading to complete
-     * glDispatcher.awaitAllPendingActions()
-     *
-     * // Now safe to proceed
-     * println("All textures loaded!")
-     * ```
-     *
-     * ## Warning:
-     * Calling this from the render thread with runBlocking {} will cause a deadlock!
-     * Only call from non-render threads.
-     */
-    suspend fun awaitAllPendingActions() {
-        suspendCancellableCoroutine { continuation ->
-            postExecutionScope.launch {
-                continuation.resume(Unit)
-            }
-        }
-    }
-
-    /**
      * Processes all pending actions on the current thread.
      *
-     * This method must be called from the GLFW render thread. It will:
-     * 1. Verify or set up the render thread context
-     * 2. Process all queued actions according to the configured [pullingStrategy]
-     * 3. Clear the action queue
+     * Must be called from the GLFW render thread. Execution order:
+     * 1. All pending actions ([ExecutionStrategy.Adaptive] and [ExecutionStrategy.Deferred])
+     * 2. One [ExecutionStrategy.Lazy] action (if any)
      *
-     * **Important:** This method is annotated with [MeshSyncContext], indicating it should
-     * only be called from the render thread context.
-     *
-     * ## Example:
-     * ```kotlin
-     * fun renderLoop() {
-     *     glDispatcher.execute() // Process all queued actions
-     *     glClear(GL_COLOR_BUFFER_BIT)
-     *     // ... render scene
-     * }
-     * ```
-     *
-     * @throws IllegalStateException If called from a thread without a GLFW context
-     *   or from a different thread after the render thread has been established.
+     * @throws IllegalStateException If called without a GLFW context or from the wrong thread.
      */
     @MeshSyncContext
     @Suppress("DSL_MARKER_APPLIED_TO_WRONG_TARGET")
@@ -227,42 +180,66 @@ class GLThreadDispatcher(
     /**
      * Closes the dispatcher and cleans up resources.
      *
-     * This method:
-     * 1. Processes any remaining pending actions
-     * 2. Clears the render thread reference
-     *
-     * **Important:** This method is annotated with [MeshSyncContext], indicating it should
-     * only be called from the render thread context.
-     *
-     * ## Example:
-     * ```kotlin
-     * fun shutdown() {
-     *     glDispatcher.close()
-     *     glfwDestroyWindow(window)
-     *     glfwTerminate()
-     * }
-     * ```
+     * Processes remaining actions and clears the render thread reference.
+     * Must be called from the GLFW render thread.
      */
     @MeshSyncContext
     @Suppress("DSL_MARKER_APPLIED_TO_WRONG_TARGET")
     fun close() = synchronized(synchronizationLock) {
-        pullPendingActionsUnsafe()
+        if (renderThread == null) {
+            logger.warning {
+                "GLThreadDispatcher.close() was called when renderThread is null. " +
+                        "Possibly the execute() method was never invoked or its not set up. " +
+                        "That behaviour is not recommended."
+            }
+        }
+
+        check(isOnRenderThread()) {
+            "GLThreadDispatcher.close() must be called on GL rendering thread. Make sure the method is called before the GL context is destroyed."
+        }
+
+        pullPendingActionsUnsafe(pullAll = true)
         renderThread = null
     }
 
     // marked as unsafe because the function is not synchronized itself
-    private fun pullPendingActionsUnsafe() {
+    private fun pullPendingActionsUnsafe(pullAll: Boolean = false) {
+        if (pullAll) {
+            var iterations = 0
+            val maxIterations = 1000 // Safety limit
+
+            while (iterations < maxIterations) {
+                val actionsCopy = copyOf(pendingActions)
+                pendingActions.clear()
+
+                val chainedCopy = copyOf(chainedActions)
+                chainedActions.clear()
+
+                actionsCopy.forEach { it.run() }
+                chainedCopy.forEach { it.run() }
+
+                iterations++
+                if (actionsCopy.isEmpty() && chainedCopy.isEmpty()) break
+            }
+
+            if (iterations >= maxIterations) {
+                logger.warning {
+                    "GLThreadDispatcher.close() exceeded max iterations ($maxIterations). " +
+                            "Possible infinite action loop. Remaining actions: pending=${pendingActions.size}, chained=${chainedActions.size}"
+                }
+
+                pendingActions.clear()
+                chainedActions.clear()
+            }
+
+            return
+        }
+
         when (pullingStrategy) {
             ActionPullingStrategy.Allocative -> {
                 val actionsCopy = copyOf(pendingActions)
                 pendingActions.clear()
                 actionsCopy.forEach {
-                    it.run()
-                }
-
-                val postActionsCopy = copyOf(postPendingActions)
-                postPendingActions.clear()
-                postActionsCopy.forEach {
                     it.run()
                 }
             }
@@ -271,13 +248,16 @@ class GLThreadDispatcher(
                     it.run()
                 }
                 pendingActions.clear()
-
-                postPendingActions.forEach {
-                    it.run()
-                }
-                postPendingActions.clear()
             }
         }
+
+        chainedActions.removeFirstOrNull()?.run()
+    }
+
+    private fun ExecutionStrategy.getExecutionScope() = when (this) {
+        ExecutionStrategy.Adaptive -> adaptiveScope
+        ExecutionStrategy.Deferred -> deferredScope
+        ExecutionStrategy.Lazy -> chainedScope
     }
 
     private fun isOnRenderThread() =
