@@ -1,21 +1,27 @@
 package me.blade.meshkt.renderer.resource
 
-import kotlinx.coroutines.Job
+import kotlinx.coroutines.launch
+import me.blade.meshkt.renderer.MeshEngine
+import me.blade.meshkt.renderer.util.invokePrivate
 
-class ResourceFactory {
-    private val resources = mutableListOf<IMeshResource>()
+class ResourceFactory(
+    val engine: MeshEngine
+) {
+    val resources = mutableListOf<MeshResource>()
 
-    fun <T: IMeshResource> registerResource(resource: T) = resourceMutex {
-        resources.add(resource)
-    }
-    
-    fun completeDeferredOperations() {
-        
-    }
-
-    private fun resourceMutex(block: () -> Unit) {
+    inline fun <reified T: MeshResource> registerResource(resource: T) {
         synchronized(resources) {
-            block()
+            resources.add(resource)
+        }
+    }
+
+    inline fun <reified T: MeshResource> freeResource(resource: T) {
+        synchronized(resources) {
+            resources.remove(resource)
+
+            engine.dispatcher.scope.launch {
+                invokePrivate(resource, "free")
+            }
         }
     }
 }

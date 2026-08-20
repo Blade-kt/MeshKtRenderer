@@ -2,7 +2,7 @@ package me.blade.meshkt.renderer.texture
 
 import org.lwjgl.opengl.GL11C.*
 
-enum class TextureMagFilter(gl: Int) {
+enum class TextureMagFilter(val gl: Int) {
     Nearest(GL_NEAREST),
     Linear(GL_LINEAR);
 }
