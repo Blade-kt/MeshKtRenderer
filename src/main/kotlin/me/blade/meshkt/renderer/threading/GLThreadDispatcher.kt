@@ -21,9 +21,10 @@ import kotlin.math.log
  * A thread dispatcher for GLFW rendering operations that provides coroutine support
  * with configurable execution strategies.
  *
- * This dispatcher manages a dedicated render thread and provides two modes of operation:
+ * This dispatcher manages a dedicated render thread and provides three modes of operation:
  * - **Adaptive**: Executes immediately if on the render thread, otherwise defers to the next frame
  * - **Deferred**: Always defers execution to the next frame
+ * - **Lazy**: Defers actions to a separate action pool where only one action is processed per frame.
  *
  * ## Usage Example:
  * ```kotlin
@@ -42,9 +43,15 @@ import kotlin.math.log
  * }
  *
  * // Force deferral to next frame:
- * glDispatcher.launch(forceDefer = true) {
+ * glDispatcher.launch(strategy = ExecutionStrategy.Deferred) {
  *     // This will always run next frame
  *     cleanupResources()
+ * }
+ *
+ * // Chained (1 action at once) execution:
+ * glDispatcher.launch(strategy = ExecutionStrategy.Lazy) {
+ *     // This and only this will run on some frame
+ *     updateRendererLazy()
  * }
  * ```
  *
