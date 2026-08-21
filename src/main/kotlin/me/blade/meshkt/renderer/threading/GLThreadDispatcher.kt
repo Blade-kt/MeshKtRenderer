@@ -7,15 +7,11 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.async
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.suspendCancellableCoroutine
 import me.blade.meshkt.renderer.resource.MeshSyncContext
 import org.lwjgl.glfw.GLFW
 import java.util.List.copyOf
 import java.util.logging.Logger
 import kotlin.coroutines.CoroutineContext
-import kotlin.coroutines.resume
-import kotlin.math.log
 
 /**
  * A thread dispatcher for GLFW rendering operations that provides coroutine support
@@ -48,7 +44,7 @@ import kotlin.math.log
  *     cleanupResources()
  * }
  *
- * // Chained (1 action at once) execution:
+ * // Chained (1 action at frame) execution:
  * glDispatcher.launch(strategy = ExecutionStrategy.Lazy) {
  *     // This and only this will run on some frame
  *     updateRendererLazy()
@@ -65,6 +61,7 @@ class GLThreadDispatcher(
 ) {
     private val pendingActions = mutableListOf<Runnable>()
     private val chainedActions = mutableListOf<Runnable>()
+    private val actionCache = mutableListOf<Runnable>()
 
     private var renderThread: Thread? = null
     private val synchronizationLock = Any()
@@ -169,16 +166,19 @@ class GLThreadDispatcher(
     fun execute() = synchronized(synchronizationLock) {
         val currentThread = Thread.currentThread()
 
-        renderThread?.let {
-            check(it == currentThread) {
-                "Rendering context cannot be dispatched from different threads. Expected: ${it.name}, Actual: ${currentThread.name}"
-            }
-        } ?: run {
-            check(isGLFWAvailable()) {
-                "GLFW is not set up in given thread: ${currentThread.name}"
-            }
+        when (val thread = renderThread) {
+            null -> {
+                check(isGLFWAvailable()) {
+                    "GLFW is not set up in given thread: ${currentThread.name}"
+                }
 
-            renderThread = currentThread
+                renderThread = currentThread
+            }
+            else -> {
+                check(thread == currentThread) {
+                    "Rendering context cannot be dispatched from different threads. Expected: ${thread.name}, Actual: ${currentThread.name}"
+                }
+            }
         }
 
         pullPendingActionsUnsafe()
@@ -209,30 +209,31 @@ class GLThreadDispatcher(
         renderThread = null
     }
 
-    // marked as unsafe because the function is not synchronized itself
+    // marked as unsafe because the function itself is not synchronized
     private fun pullPendingActionsUnsafe(pullAll: Boolean = false) {
         if (pullAll) {
             var iterations = 0
             val maxIterations = 1000 // Safety limit
 
             while (iterations < maxIterations) {
-                val actionsCopy = copyOf(pendingActions)
+                actionCache.clear()
+                actionCache.addAll(pendingActions)
+                actionCache.forEach { it.run() }
                 pendingActions.clear()
 
-                val chainedCopy = copyOf(chainedActions)
+                actionCache.clear()
+                actionCache.addAll(chainedActions)
+                actionCache.forEach { it.run() }
                 chainedActions.clear()
 
-                actionsCopy.forEach { it.run() }
-                chainedCopy.forEach { it.run() }
-
                 iterations++
-                if (actionsCopy.isEmpty() && chainedCopy.isEmpty()) break
+                if (pendingActions.isEmpty() && chainedActions.isEmpty()) break
             }
 
             if (iterations >= maxIterations) {
                 logger.warning {
                     "GLThreadDispatcher.close() exceeded max iterations ($maxIterations). " +
-                            "Possible infinite action loop. Remaining actions: pending=${pendingActions.size}, chained=${chainedActions.size}"
+                            "Possible infinite action loop. Dropping remaining actions: pending=${pendingActions.size}, chained=${chainedActions.size}"
                 }
 
                 pendingActions.clear()
@@ -244,11 +245,10 @@ class GLThreadDispatcher(
 
         when (pullingStrategy) {
             ActionPullingStrategy.Allocative -> {
-                val actionsCopy = copyOf(pendingActions)
+                actionCache.clear()
+                actionCache.addAll(pendingActions)
+                actionCache.forEach { it.run() }
                 pendingActions.clear()
-                actionsCopy.forEach {
-                    it.run()
-                }
             }
             ActionPullingStrategy.Direct -> {
                 pendingActions.forEach {
