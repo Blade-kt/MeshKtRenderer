@@ -1,4 +1,4 @@
-package me.blade.meshkt.renderer.texture
+package me.blade.meshkt.renderer.texture.properties
 
 import org.lwjgl.opengl.GL11C.*
 

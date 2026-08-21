@@ -1,27 +1,24 @@
 package me.blade.meshkt.renderer.resource
 
-import kotlinx.coroutines.launch
 import me.blade.meshkt.renderer.MeshEngine
+import me.blade.meshkt.renderer.threading.ExecutionStrategy
 import me.blade.meshkt.renderer.util.invokePrivate
 
 class ResourceFactory(
     val engine: MeshEngine
 ) {
-    val resources = mutableListOf<MeshResource>()
+    val resources = mutableListOf<IMeshResource>()
 
-    inline fun <reified T: MeshResource> registerResource(resource: T) {
-        synchronized(resources) {
+    inline fun <reified T: IMeshResource> registerResource(resource: T) {
+        engine.dispatcher.launch(strategy = ExecutionStrategy.Adaptive) {
             resources.add(resource)
         }
     }
 
-    inline fun <reified T: MeshResource> freeResource(resource: T) {
-        synchronized(resources) {
+    inline fun <reified T: IMeshResource> freeResource(resource: T) {
+        engine.dispatcher.launch(strategy = ExecutionStrategy.Adaptive) {
             resources.remove(resource)
-
-            engine.dispatcher.launch {
-                invokePrivate(resource, "free")
-            }
+            invokePrivate(resource, "free")
         }
     }
 }

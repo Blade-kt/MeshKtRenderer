@@ -1,59 +1,45 @@
 package me.blade.meshkt.renderer.texture
 
 import me.blade.meshkt.renderer.MeshEngine
-import me.blade.meshkt.renderer.resource.MeshResource
+import me.blade.meshkt.renderer.dsa.GLProperty
+import me.blade.meshkt.renderer.dsa.GLProperty.Companion.property
+import me.blade.meshkt.renderer.resource.IMeshResource
 import me.blade.meshkt.renderer.resource.MeshSyncContext
+import me.blade.meshkt.renderer.texture.groups.TextureFiltering
+import me.blade.meshkt.renderer.texture.groups.TextureMipmapping
+import me.blade.meshkt.renderer.texture.groups.TextureStorage
+import me.blade.meshkt.renderer.texture.groups.TextureWrapping
+import me.blade.meshkt.renderer.texture.properties.TextureMagFilter
+import me.blade.meshkt.renderer.texture.properties.TextureMinFilter
+import me.blade.meshkt.renderer.texture.properties.TextureTarget
+import me.blade.meshkt.renderer.texture.properties.TextureWrap
 import org.lwjgl.opengl.GL45C.*
 
 @MeshSyncContext
-class Texture(
-    descriptor: Descriptor
-) : MeshResource() {
-    class Descriptor {
-        var target: TextureTarget? = null
+class Texture(val target: TextureTarget) : IMeshResource {
+    val handle = TextureHandle(target)
 
-        var minFilter: TextureMinFilter? = null
-        var magFilter: TextureMagFilter? = null
-    }
+    val filtering = TextureFiltering(handle)
+    val wrapping = TextureWrapping(handle)
+    val mipmap = TextureMipmapping(handle)
 
-    private var _handle: Int? = null
-    val handle get() = _handle ?: throw IllegalStateException("Texture is not initialized yet")
-
-    var minFilter = TextureMinFilter.NearestMipmapLinear; set(value) {
-        if (field == value) return
-        field = value
-
-        glTextureParameteri(handle, GL_TEXTURE_MIN_FILTER, value.gl)
-    }
-
-    var magFilter = TextureMagFilter.Linear; set(value) {
-        if (field == value) return
-        field = value
-
-        glTextureParameteri(handle, GL_TEXTURE_MAG_FILTER, value.gl)
-    }
-
-    init {
-        val target = descriptor.target ?: throw IllegalStateException("Descriptor target is null")
-        _handle = glCreateTextures(target.gl)
-
-        minFilter = descriptor.minFilter ?: minFilter
-        magFilter = descriptor.magFilter ?: magFilter
-    }
+    val storage = TextureStorage(this)
 
     override fun free() {
-        glDeleteTextures(handle)
+        handle.free()
     }
 
     companion object {
-        fun MeshEngine.createTexture(block: Descriptor.() -> Unit): Texture {
+        fun MeshEngine.createTexture(
+            target: TextureTarget = TextureTarget.Texture2D,
+            block: Texture.() -> Unit = {}
+        ): Texture {
             val engine = this
 
-            val descriptor = Descriptor()
-            block(descriptor)
-
-            val texture = Texture(descriptor)
+            val texture = Texture(target)
             engine.resourceFactory.registerResource(texture)
+
+            block(texture)
             return texture
         }
     }
