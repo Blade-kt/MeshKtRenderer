@@ -1,0 +1,38 @@
+package me.blade.meshkt.renderer.objects.texture.properties
+
+import org.lwjgl.opengl.GL13C.*
+
+enum class TextureSlot(val gl: Int) {
+    Slot0(GL_TEXTURE0),
+    Slot1(GL_TEXTURE1),
+    Slot2(GL_TEXTURE2),
+    Slot3(GL_TEXTURE3),
+    Slot4(GL_TEXTURE4),
+    Slot5(GL_TEXTURE5),
+    Slot6(GL_TEXTURE6),
+    Slot7(GL_TEXTURE7),
+    Slot8(GL_TEXTURE8),
+    Slot9(GL_TEXTURE9),
+    Slot10(GL_TEXTURE10),
+    Slot11(GL_TEXTURE11),
+    Slot12(GL_TEXTURE12),
+    Slot13(GL_TEXTURE13),
+    Slot14(GL_TEXTURE14),
+    Slot15(GL_TEXTURE15),
+    Slot16(GL_TEXTURE16),
+    Slot17(GL_TEXTURE17),
+    Slot18(GL_TEXTURE18),
+    Slot19(GL_TEXTURE19),
+    Slot20(GL_TEXTURE20),
+    Slot21(GL_TEXTURE21),
+    Slot22(GL_TEXTURE22),
+    Slot23(GL_TEXTURE23),
+    Slot24(GL_TEXTURE24),
+    Slot25(GL_TEXTURE25),
+    Slot26(GL_TEXTURE26),
+    Slot27(GL_TEXTURE27),
+    Slot28(GL_TEXTURE28),
+    Slot29(GL_TEXTURE29),
+    Slot30(GL_TEXTURE30),
+    Slot31(GL_TEXTURE31),
+}

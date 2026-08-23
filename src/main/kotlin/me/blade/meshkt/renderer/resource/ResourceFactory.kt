@@ -1,24 +1,36 @@
 package me.blade.meshkt.renderer.resource
 
-import me.blade.meshkt.renderer.MeshEngine
-import me.blade.meshkt.renderer.threading.ExecutionStrategy
-import me.blade.meshkt.renderer.util.invokePrivate
+import me.blade.meshkt.renderer.engine.MeshEngine
+import java.util.List.copyOf
 
 class ResourceFactory(
     val engine: MeshEngine
-) {
-    val resources = mutableListOf<IMeshResource>()
+) : IMeshResource {
+    private val resources = mutableListOf<IMeshResource>()
+    private val synchronizationLock = this
 
-    inline fun <reified T: IMeshResource> registerResource(resource: T) {
-        engine.dispatcher.launch(strategy = ExecutionStrategy.Adaptive) {
+    fun getResources() = synchronized(synchronizationLock, ::resources)
+
+    fun <T: IMeshResource> registerResource(resource: T) {
+        synchronized(synchronizationLock) {
             resources.add(resource)
         }
     }
 
-    inline fun <reified T: IMeshResource> freeResource(resource: T) {
-        engine.dispatcher.launch(strategy = ExecutionStrategy.Adaptive) {
+    fun <T: IMeshResource> unregisterResource(resource: T) {
+        synchronized(synchronizationLock) {
             resources.remove(resource)
-            invokePrivate(resource, "free")
+        }
+    }
+
+    override fun free() {
+        synchronized(synchronizationLock) {
+            val resourcesCopy = copyOf(resources)
+            resources.clear()
+
+            resourcesCopy.forEach {
+                it.free()
+            }
         }
     }
 }

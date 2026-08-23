@@ -1,4 +1,4 @@
-package me.blade.meshkt.renderer.dsa
+package me.blade.meshkt.renderer.util
 
 import kotlin.reflect.KProperty
 

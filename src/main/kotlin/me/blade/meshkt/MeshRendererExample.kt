@@ -1,16 +1,7 @@
 package me.blade.meshkt
 
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
 import me.blade.meshkt.renderer.MeshRenderer
-import org.lwjgl.glfw.GLFW
-import org.lwjgl.glfw.GLFW.glfwDestroyWindow
-import org.lwjgl.glfw.GLFW.glfwGetFramebufferSize
-import org.lwjgl.glfw.GLFW.glfwInit
-import org.lwjgl.glfw.GLFW.glfwMakeContextCurrent
-import org.lwjgl.glfw.GLFW.glfwSetFramebufferSizeCallback
-import org.lwjgl.glfw.GLFW.glfwTerminate
+import org.lwjgl.glfw.GLFW.*
 import org.lwjgl.opengl.GL
 import org.lwjgl.opengl.GL11C.*
 import org.lwjgl.system.MemoryStack
@@ -21,7 +12,10 @@ object MeshRendererExample {
     fun main(args: Array<String>) {
         glfwInit()
 
-        val window = GLFW.glfwCreateWindow(1024, 768, "MeshRenderer Demo", 0L, 0L)
+        glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3)
+        glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3)
+        glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE)
+        val window = glfwCreateWindow(1024, 768, "MeshRenderer Demo", 0L, 0L)
 
         glfwMakeContextCurrent(window)
         GL.createCapabilities()
@@ -40,18 +34,18 @@ object MeshRendererExample {
         }
 
         while (true) {
-            if (GLFW.glfwWindowShouldClose(window)) {
+            if (glfwWindowShouldClose(window)) {
                 break
             }
 
             glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT)
-            MeshRenderer.dispatcher.execute()
+            MeshRenderer.engine.dispatcher.execute()
 
-            GLFW.glfwSwapBuffers(window)
-            GLFW.glfwPollEvents()
+            glfwSwapBuffers(window)
+            glfwPollEvents()
         }
 
-        MeshRenderer.dispatcher.close()
+        MeshRenderer.engine.dispatcher.free()
         glfwDestroyWindow(window)
         glfwTerminate()
     }

@@ -7,6 +7,7 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.async
 import kotlinx.coroutines.launch
+import me.blade.meshkt.renderer.resource.IMeshResource
 import me.blade.meshkt.renderer.resource.MeshSyncContext
 import org.lwjgl.glfw.GLFW
 import java.util.List.copyOf
@@ -57,16 +58,15 @@ import kotlin.coroutines.CoroutineContext
  * @see ActionPullingStrategy
  */
 class GLThreadDispatcher(
-    private val pullingStrategy: ActionPullingStrategy = ActionPullingStrategy.Allocative
-) {
+    val pullingStrategy: ActionPullingStrategy = ActionPullingStrategy.Allocative,
+    val logger: Logger,
+) : IMeshResource {
     private val pendingActions = mutableListOf<Runnable>()
     private val chainedActions = mutableListOf<Runnable>()
     private val actionCache = mutableListOf<Runnable>()
 
     private var renderThread: Thread? = null
     private val synchronizationLock = Any()
-
-    private val logger = Logger.getLogger("MeshKt - GLThreadDispatcher")
 
     private val adaptiveDispatcher = object : CoroutineDispatcher() {
         override fun dispatch(context: CoroutineContext, block: Runnable): Unit = synchronized(synchronizationLock) {
@@ -162,7 +162,6 @@ class GLThreadDispatcher(
      * @throws IllegalStateException If called without a GLFW context or from the wrong thread.
      */
     @MeshSyncContext
-    @Suppress("DSL_MARKER_APPLIED_TO_WRONG_TARGET")
     fun execute() = synchronized(synchronizationLock) {
         val currentThread = Thread.currentThread()
 
@@ -185,14 +184,13 @@ class GLThreadDispatcher(
     }
 
     /**
-     * Closes the dispatcher and cleans up resources.
+     * Frees the dispatcher and cleans up resources.
      *
      * Processes remaining actions and clears the render thread reference.
      * Must be called from the GLFW render thread.
      */
     @MeshSyncContext
-    @Suppress("DSL_MARKER_APPLIED_TO_WRONG_TARGET")
-    fun close() = synchronized(synchronizationLock) {
+    override fun free() = synchronized(synchronizationLock) {
         if (renderThread == null) {
             logger.warning {
                 "GLThreadDispatcher.close() was called when renderThread is null. " +

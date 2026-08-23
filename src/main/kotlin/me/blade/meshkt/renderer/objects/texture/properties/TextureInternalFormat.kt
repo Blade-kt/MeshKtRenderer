@@ -1,4 +1,4 @@
-package me.blade.meshkt.renderer.texture.properties
+package me.blade.meshkt.renderer.objects.texture.properties
 
 import org.lwjgl.opengl.GL30C.*
 

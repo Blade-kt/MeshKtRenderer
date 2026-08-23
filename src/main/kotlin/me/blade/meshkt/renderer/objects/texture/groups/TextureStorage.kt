@@ -1,10 +1,10 @@
-package me.blade.meshkt.renderer.texture.groups
+package me.blade.meshkt.renderer.objects.texture.groups
 
-import me.blade.meshkt.renderer.texture.Texture
-import me.blade.meshkt.renderer.texture.properties.TextureInternalFormat
-import me.blade.meshkt.renderer.texture.properties.TexturePixelFormat
-import me.blade.meshkt.renderer.texture.properties.TexturePixelType
-import me.blade.meshkt.renderer.texture.properties.TextureTarget
+import me.blade.meshkt.renderer.objects.texture.Texture
+import me.blade.meshkt.renderer.objects.texture.properties.TextureInternalFormat
+import me.blade.meshkt.renderer.objects.texture.properties.TexturePixelFormat
+import me.blade.meshkt.renderer.objects.texture.properties.TexturePixelType
+import me.blade.meshkt.renderer.objects.texture.properties.TextureTarget
 import org.lwjgl.opengl.GL45C.*
 
 class TextureStorage(private val texture: Texture) {
@@ -23,18 +23,18 @@ class TextureStorage(private val texture: Texture) {
     fun allocate() {
         val internal = internalFormat ?: throw IllegalStateException("allocate(): Texture internalFormat is not specified")
 
-        when (texture.target) {
+        when (texture.handle.target) {
             TextureTarget.Texture1D -> {
                 val w = width ?: throw IllegalStateException("allocate(): Texture width is not specified")
                 check(w > 0) { "allocate(): Width must be > 0" }
-                glTextureStorage1D(handle.gl, levels, internal.gl, w)
+                glTextureStorage1D(handle.id, levels, internal.gl, w)
             }
             TextureTarget.Texture2D -> {
                 val w = width ?: throw IllegalStateException("allocate(): Texture width is not specified")
                 val h = height ?: throw IllegalStateException("allocate(): Texture height is not specified")
                 check(w > 0) { "allocate(): Width must be > 0" }
                 check(h > 0) { "allocate(): Height must be > 0" }
-                glTextureStorage2D(handle.gl, levels, internal.gl, w, h)
+                glTextureStorage2D(handle.id, levels, internal.gl, w, h)
             }
             TextureTarget.Texture3D -> {
                 val w = width ?: throw IllegalStateException("allocate(): Texture width is not specified")
@@ -43,7 +43,7 @@ class TextureStorage(private val texture: Texture) {
                 check(w > 0) { "allocate(): Width must be > 0" }
                 check(h > 0) { "allocate(): Height must be > 0" }
                 check(d > 0) { "allocate(): Depth must be > 0" }
-                glTextureStorage3D(handle.gl, levels, internal.gl, w, h, d)
+                glTextureStorage3D(handle.id, levels, internal.gl, w, h, d)
             }
         }
     }
@@ -59,21 +59,21 @@ class TextureStorage(private val texture: Texture) {
         val pf = pixelFormat ?: this.uploadPixelFormat ?: throw IllegalStateException("upload(): Texture uploadPixelFormat is not specified")
         val pt = pixelType ?: this.uploadPixelType ?: throw IllegalStateException("upload(): Texture uploadPixelType is not specified")
 
-        when (texture.target) {
+        when (texture.handle.target) {
             TextureTarget.Texture1D -> {
                 check(width > 0) { "upload(): Width must be > 0" }
-                glTextureSubImage1D(handle.gl, level, offsetX, width, pf.gl, pt.gl, pointer)
+                glTextureSubImage1D(handle.id, level, offsetX, width, pf.gl, pt.gl, pointer)
             }
             TextureTarget.Texture2D -> {
                 check(width > 0) { "upload(): Width must be > 0" }
                 check(height > 0) { "upload(): Height must be > 0" }
-                glTextureSubImage2D(handle.gl, level, offsetX, offsetY, width, height, pf.gl, pt.gl, pointer)
+                glTextureSubImage2D(handle.id, level, offsetX, offsetY, width, height, pf.gl, pt.gl, pointer)
             }
             TextureTarget.Texture3D -> {
                 check(width > 0) { "upload(): Width must be > 0" }
                 check(height > 0) { "upload(): Height must be > 0" }
                 check(depth > 0) { "upload(): Depth must be > 0" }
-                glTextureSubImage3D(handle.gl, level, offsetX, offsetY, offsetZ, width, height, depth, pf.gl, pt.gl, pointer)
+                glTextureSubImage3D(handle.id, level, offsetX, offsetY, offsetZ, width, height, depth, pf.gl, pt.gl, pointer)
             }
         }
     }
