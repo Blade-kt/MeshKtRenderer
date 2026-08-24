@@ -6,6 +6,7 @@ import me.blade.meshkt.renderer.resource.MeshSyncContext
 import org.lwjgl.opengl.GL11C
 import org.lwjgl.opengl.GL45C.glCreateFramebuffers
 
+@Suppress("DSL_MARKER_APPLIED_TO_WRONG_TARGET")
 class FramebufferHandle private constructor(
     val id: Int,
     private val deleteOnFree: Boolean

@@ -1,10 +1,9 @@
-package me.blade.meshkt.renderer.resource
+package me.blade.meshkt.renderer.engine
 
-import me.blade.meshkt.renderer.engine.MeshEngine
-import java.util.List.copyOf
+import me.blade.meshkt.renderer.resource.IMeshResource
+import java.util.List
 
 class ResourceFactory(
-    val engine: MeshEngine
 ) : IMeshResource {
     private val resources = mutableListOf<IMeshResource>()
     private val synchronizationLock = this
@@ -25,7 +24,7 @@ class ResourceFactory(
 
     override fun free() {
         synchronized(synchronizationLock) {
-            val resourcesCopy = copyOf(resources)
+            val resourcesCopy = List.copyOf(resources)
             resources.clear()
 
             resourcesCopy.forEach {

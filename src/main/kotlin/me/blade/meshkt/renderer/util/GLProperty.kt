@@ -13,9 +13,7 @@ class GLProperty <T> (
     }
 
     operator fun setValue(thisRef: Any?, property: KProperty<*>, newValue: T) {
-        if (_value == newValue) return
         _value = newValue
-
         setter(newValue)
     }
 

@@ -2,7 +2,7 @@ package me.blade.meshkt.renderer.objects.texture.properties
 
 import org.lwjgl.opengl.GL13C.*
 
-enum class TextureSlot(val gl: Int) {
+enum class TextureSlot(val textureSlot: Int) {
     Slot0(GL_TEXTURE0),
     Slot1(GL_TEXTURE1),
     Slot2(GL_TEXTURE2),
@@ -34,5 +34,5 @@ enum class TextureSlot(val gl: Int) {
     Slot28(GL_TEXTURE28),
     Slot29(GL_TEXTURE29),
     Slot30(GL_TEXTURE30),
-    Slot31(GL_TEXTURE31),
+    Slot31(GL_TEXTURE31);
 }

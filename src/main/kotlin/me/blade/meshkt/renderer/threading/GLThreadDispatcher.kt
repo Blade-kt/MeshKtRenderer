@@ -10,7 +10,6 @@ import kotlinx.coroutines.launch
 import me.blade.meshkt.renderer.resource.IMeshResource
 import me.blade.meshkt.renderer.resource.MeshSyncContext
 import org.lwjgl.glfw.GLFW
-import java.util.List.copyOf
 import java.util.logging.Logger
 import kotlin.coroutines.CoroutineContext
 
