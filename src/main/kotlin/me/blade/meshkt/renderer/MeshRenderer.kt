@@ -1,6 +1,8 @@
 package me.blade.meshkt.renderer
 
+import me.blade.meshkt.renderer.objects.framebuffer.createFramebuffer
 import me.blade.meshkt.renderer.objects.framebuffer.properties.FramebufferAttachment
+import me.blade.meshkt.renderer.objects.texture.createTexture
 import me.blade.meshkt.renderer.objects.texture.properties.TextureInternalFormat
 import me.blade.meshkt.renderer.threading.PullingStrategy
 import java.util.logging.Logger
