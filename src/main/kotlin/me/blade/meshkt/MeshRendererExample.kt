@@ -39,13 +39,16 @@ object MeshRendererExample {
             }
 
             glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT)
-            MeshRenderer.engine.dispatcher.execute()
+            MeshRenderer.executor.pollEvents()
+
+            MeshRenderer.context.begin()
+            MeshRenderer.frame()
+            MeshRenderer.context.end()
 
             glfwSwapBuffers(window)
             glfwPollEvents()
         }
 
-        MeshRenderer.engine.dispatcher.free()
         glfwDestroyWindow(window)
         glfwTerminate()
     }

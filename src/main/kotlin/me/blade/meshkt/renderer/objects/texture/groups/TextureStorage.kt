@@ -1,14 +1,12 @@
 package me.blade.meshkt.renderer.objects.texture.groups
 
-import me.blade.meshkt.renderer.objects.texture.Texture
+import me.blade.meshkt.renderer.objects.texture.TextureHandle
 import me.blade.meshkt.renderer.objects.texture.properties.TextureInternalFormat
 import me.blade.meshkt.renderer.objects.texture.properties.TexturePixelFormat
 import me.blade.meshkt.renderer.objects.texture.properties.TexturePixelType
 import org.lwjgl.opengl.GL45C.*
 
-class TextureStorage(texture: Texture) {
-    private val handle = texture.handle
-
+class TextureStorage(private val handle: TextureHandle) {
     var levels: Int = 1
 
     var width: Int? = null

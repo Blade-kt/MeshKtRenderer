@@ -1,13 +1,13 @@
-package me.blade.meshkt.renderer.objects.framebuffer
+package me.blade.meshkt.renderer.objects.texture
 
 import me.blade.meshkt.renderer.objects.ObjectHandle
-import org.lwjgl.opengl.GL45C.*
+import org.lwjgl.opengl.GL11C.glDeleteTextures
 
-class FramebufferHandle(
+class TextureHandle(
     identifier: Int,
     isExternal: Boolean
 ) : ObjectHandle(identifier, isExternal) {
     override fun delete() {
-        glDeleteFramebuffers(id)
+        glDeleteTextures(id)
     }
 }

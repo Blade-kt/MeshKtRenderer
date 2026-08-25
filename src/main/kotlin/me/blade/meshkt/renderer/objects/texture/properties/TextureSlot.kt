@@ -35,4 +35,6 @@ enum class TextureSlot(val textureSlot: Int) {
     Slot29(GL_TEXTURE29),
     Slot30(GL_TEXTURE30),
     Slot31(GL_TEXTURE31);
+
+    val unitIndex = textureSlot - GL_TEXTURE0
 }

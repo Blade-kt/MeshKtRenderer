@@ -27,7 +27,7 @@ class ObservableEnumMap<K : Enum<K>, V>(
 
     companion object {
         inline fun <reified K : Enum<K>, V> observableEnumMap(
-            noinline update: (K, V?) -> Unit,
+            noinline update: (K, V?) -> Unit = { _, _ -> },
         ) = ObservableEnumMap(K::class.java, update)
     }
 }

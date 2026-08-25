@@ -1,7 +1,7 @@
 package me.blade.meshkt.renderer.threading
 
 /**
- * Strategy for processing pending actions during [GLThreadDispatcher.execute].
+ * Strategy for processing pending actions during [RenderThreadExecutor.pollEvents].
  *
  * [Allocative] Creates a snapshot of pending actions before execution.
  *   - Safe for re-entrant calls (actions added during execution will run next frame)
@@ -14,7 +14,7 @@ package me.blade.meshkt.renderer.threading
  *   - Use only if you're certain actions won't add more actions
  *   - Best for performance-critical code with predictable execution
  */
-enum class ActionPullingStrategy {
+enum class PullingStrategy {
     Allocative,
     Direct
 }
