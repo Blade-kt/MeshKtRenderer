@@ -1,13 +1,9 @@
 package me.blade.meshkt.renderer.util
 
-import java.util.EnumMap
-import java.util.EnumSet
-
-class ObservableEnumMap<K : Enum<K>, V>(
-    enumClass: Class<K>,
+class ObservableMap<K, V>(
     private val update: (K, V?) -> Unit
 ) {
-    private val map = EnumMap(EnumSet.allOf(enumClass).associateWith { null as V? })
+    private val map = hashMapOf<K, V?>()
     val entries get() = map.entries
 
     operator fun get(key: K): V? = map.getValue(key)
@@ -18,8 +14,8 @@ class ObservableEnumMap<K : Enum<K>, V>(
     }
 
     companion object {
-        inline fun <reified K : Enum<K>, V> observableEnumMap(
+        inline fun <reified K, V> observableMap(
             noinline update: (K, V?) -> Unit = { _, _ -> },
-        ) = ObservableEnumMap(K::class.java, update)
+        ) = ObservableMap(update)
     }
 }

@@ -1,21 +1,23 @@
 @file:Suppress("DSL_MARKER_APPLIED_TO_WRONG_TARGET")
-package me.blade.meshkt.renderer.objects.buffer
+package me.blade.meshkt.renderer.objects.shader
 
 import me.blade.meshkt.renderer.util.MeshDslObj3ct
 import kotlin.contracts.ExperimentalContracts
 import kotlin.contracts.InvocationKind
 import kotlin.contracts.contract
 
-@MeshDslObj3ct
 @OptIn(ExperimentalContracts::class)
-inline fun createBuffer(
-    block: Buffer.() -> Unit = {}
-): Buffer {
+@MeshDslObj3ct
+inline fun createShader(
+    block: Shader.() -> Unit
+): Shader {
     contract {
         callsInPlace(block, InvocationKind.EXACTLY_ONCE)
     }
 
-    val buffer = Buffer()
-    block(buffer)
-    return buffer
+    val shader = Shader()
+    block(shader)
+    shader.link()
+
+    return shader
 }

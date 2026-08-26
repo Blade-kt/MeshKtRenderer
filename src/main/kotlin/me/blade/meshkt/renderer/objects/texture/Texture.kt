@@ -5,7 +5,6 @@ import me.blade.meshkt.renderer.objects.texture.groups.TextureFiltering
 import me.blade.meshkt.renderer.objects.texture.groups.TextureMipmapping
 import me.blade.meshkt.renderer.objects.texture.groups.TextureStorage
 import me.blade.meshkt.renderer.objects.texture.groups.TextureWrapping
-import me.blade.meshkt.renderer.util.MeshDslObj3ct
 
 class Texture(
     val handle: TextureHandle

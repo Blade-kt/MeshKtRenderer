@@ -4,12 +4,20 @@ package me.blade.meshkt.renderer.objects.texture
 import me.blade.meshkt.renderer.util.MeshDslObj3ct
 import org.lwjgl.opengl.GL11C.GL_TEXTURE_2D
 import org.lwjgl.opengl.GL45.glCreateTextures
+import kotlin.contracts.ExperimentalContracts
+import kotlin.contracts.InvocationKind
+import kotlin.contracts.contract
 
 @MeshDslObj3ct
-fun createTexture(
+@OptIn(ExperimentalContracts::class)
+inline fun createTexture(
     handle: TextureHandle = createTextureHandle(),
     block: Texture.() -> Unit = {}
 ): Texture {
+    contract {
+        callsInPlace(block, InvocationKind.EXACTLY_ONCE)
+    }
+
     val texture = Texture(handle)
     block(texture)
     return texture

@@ -1,42 +1,39 @@
 package me.blade.meshkt.renderer
 
 import me.blade.meshkt.renderer.objects.framebuffer.createFramebuffer
-import me.blade.meshkt.renderer.objects.framebuffer.properties.FramebufferAttachment
-import me.blade.meshkt.renderer.objects.texture.createTexture
-import me.blade.meshkt.renderer.objects.texture.properties.TextureInternalFormat
+import me.blade.meshkt.renderer.objects.shader.createShader
+import me.blade.meshkt.renderer.objects.shader.properties.ShaderType
+import me.blade.meshkt.renderer.objects.ssbo.createShaderStorageBuffer
+import me.blade.meshkt.renderer.pipeline.renderPass
 import me.blade.meshkt.renderer.threading.PullingStrategy
 import java.util.logging.Logger
 
 object MeshRenderer {
     private val logger: Logger = Logger.getLogger("MeshKt")
 
-    val executor = createRenderThreadExecutor(PullingStrategy.Allocative, logger)
-    val context = createRenderContext(executor)
+    val executor = createExecutor(PullingStrategy.Allocative, logger)
+    val context = createContext(executor)
 
     val framebuffer = createFramebuffer {
-        attachments[FramebufferAttachment.Color0] = createTexture {
-            storage {
-                internalFormat = TextureInternalFormat.RGBA8
-                width = 1024
-                height = 1024
-                allocate()
-            }
+
+    }
+
+    val shader = createShader {
+        compileSource(ShaderType.Vertex) {
+            ""
         }
 
-        attachments[FramebufferAttachment.Depth] = createTexture {
-            storage {
-                internalFormat = TextureInternalFormat.Depth32F
-                width = 1024
-                height = 1024
-                allocate()
-            }
+        compileSource(ShaderType.Fragment) {
+            ""
         }
+    }
 
-        drawTargets = arrayOf(FramebufferAttachment.Color0)
+    val ssbo1 = createShaderStorageBuffer(1024) {
+
     }
 
     fun frame() {
-        context.use {
+        renderPass(context) {
 
         }
     }
