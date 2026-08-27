@@ -11,9 +11,9 @@ fun renderPass(
 ) {
     val state = context.acquireRenderState()
 
-    val pipeline = RenderPass(state)
-    block(pipeline)
-    pipeline.render()
+    val pass = RenderPass(state)
+    block(pass)
+    pass.render()
 
     state.release()
 }

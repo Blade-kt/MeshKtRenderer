@@ -8,12 +8,16 @@ import org.lwjgl.system.MemoryStack
 import java.nio.IntBuffer
 
 object MeshRendererExample {
+    var viewportWidth = 1
+    var viewportHeight = 1
+
     @JvmStatic
     fun main(args: Array<String>) {
         glfwInit()
 
-        glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3)
-        glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3)
+        glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4)
+        glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6)
+        glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GLFW_FALSE)
         glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE)
         val window = glfwCreateWindow(1024, 768, "MeshRenderer Demo", 0L, 0L)
 
@@ -23,14 +27,19 @@ object MeshRendererExample {
         val stack = MemoryStack.stackPush()
         val width: IntBuffer = stack.ints(0)
         val height: IntBuffer = stack.ints(0)
+        glfwGetFramebufferSize(window, width, height)
         val fbWidth = width.get(0)
         val fbHeight = height.get(0)
-        glfwGetFramebufferSize(window, width, height)
+
         stack.pop()
 
         glViewport(0, 0,fbWidth, fbHeight)
+        viewportWidth = fbWidth
+        viewportHeight = fbHeight
         glfwSetFramebufferSizeCallback(window) { _, width, height ->
             glViewport(0, 0, width, height)
+            viewportWidth = width
+            viewportHeight = height
         }
 
         while (true) {

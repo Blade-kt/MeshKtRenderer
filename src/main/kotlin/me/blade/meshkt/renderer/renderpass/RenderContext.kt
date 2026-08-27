@@ -28,7 +28,7 @@ class RenderContext(
     }
 
     fun acquireRenderState(): RenderState {
-        check(isStateInUse) {
+        check(!isStateInUse) {
             "Cannot acquire render state. It's already in use!"
         }
 

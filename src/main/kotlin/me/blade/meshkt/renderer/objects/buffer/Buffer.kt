@@ -1,10 +1,13 @@
 package me.blade.meshkt.renderer.objects.buffer
 
 import me.blade.meshkt.renderer.resource.IMeshResource
+import org.joml.Matrix4f
 import org.lwjgl.opengl.GL15C.GL_DYNAMIC_DRAW
 import org.lwjgl.opengl.GL45C.glNamedBufferData
 import org.lwjgl.opengl.GL45C.nglNamedBufferSubData
 import org.lwjgl.system.MemoryUtil.*
+import java.nio.FloatBuffer
+import kotlin.math.max
 
 class Buffer(initialCapacity: Long) : IMeshResource {
     val handle = BufferHandle()
@@ -28,18 +31,42 @@ class Buffer(initialCapacity: Long) : IMeshResource {
         nglNamedBufferSubData(handle.id, 0L, capacity, pointer)
     }
 
-    // TODO: convert to plus assign operator
-    fun int(value: Int) = write(4) {
+    operator fun plusAssign(value: Int) = write(4) {
         memPutInt(cursor, value)
     }
 
-    fun float(value: Float) = write(4) {
+    operator fun plusAssign(value: Float) = write(4) {
         memPutFloat(cursor, value)
     }
 
-    private inline fun write(bytes: Int, block: () -> Unit) {
+    operator fun plusAssign(value: Double) = write(4) {
+        memPutFloat(cursor, value.toFloat())
+    }
+
+    operator fun plusAssign(value: Matrix4f) = write(64) {
+        memPutFloat(cursor +  0, value.m00())
+        memPutFloat(cursor +  4, value.m01())
+        memPutFloat(cursor +  8, value.m02())
+        memPutFloat(cursor + 12, value.m03())
+        memPutFloat(cursor + 16, value.m10())
+        memPutFloat(cursor + 20, value.m11())
+        memPutFloat(cursor + 24, value.m12())
+        memPutFloat(cursor + 28, value.m13())
+        memPutFloat(cursor + 32, value.m20())
+        memPutFloat(cursor + 36, value.m21())
+        memPutFloat(cursor + 40, value.m22())
+        memPutFloat(cursor + 44, value.m23())
+        memPutFloat(cursor + 48, value.m30())
+        memPutFloat(cursor + 52, value.m31())
+        memPutFloat(cursor + 56, value.m32())
+        memPutFloat(cursor + 60, value.m33())
+    }
+
+    private inline fun write(bytes: Long, block: () -> Unit) {
         val shouldGrow = (offset + bytes) > capacity
-        if (shouldGrow) allocate(capacity * 2)
+        if (shouldGrow) {
+            allocate(capacity + max(capacity, bytes))
+        }
         block()
         offset += bytes
     }
