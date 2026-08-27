@@ -7,15 +7,6 @@ import kotlin.contracts.InvocationKind
 import kotlin.contracts.contract
 
 @MeshDslObj3ct
-@OptIn(ExperimentalContracts::class)
-inline fun createBuffer(
-    block: Buffer.() -> Unit = {}
-): Buffer {
-    contract {
-        callsInPlace(block, InvocationKind.EXACTLY_ONCE)
-    }
-
-    val buffer = Buffer()
-    block(buffer)
-    return buffer
-}
+fun createBuffer(
+    initialCapacity: Long = 1024,
+) = Buffer(initialCapacity)
