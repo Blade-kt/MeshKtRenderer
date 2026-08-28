@@ -8,7 +8,7 @@ out vec4 COLOR_ATTACHMENT0;
 void main() {
     int BUFFER_INDEX = int(S_BUFFER_INDEX);
 
-    if (BUFFER_INDEX == 0) {
+    if (BUFFER_INDEX == 0) { // rect
         COLOR_ATTACHMENT0 = S_VERTEX_COLOR;
     }
 }

@@ -24,8 +24,6 @@ class RenderState(private val context: RenderContext) {
         glBindFramebuffer(GL_DRAW_FRAMEBUFFER, value?.handle?.id ?: 0)
     }
 
-
-
     fun validate() = context.validateState()
     fun release() = context.releaseState()
 }

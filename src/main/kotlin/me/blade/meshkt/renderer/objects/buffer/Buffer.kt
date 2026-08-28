@@ -6,7 +6,6 @@ import org.lwjgl.opengl.GL15C.GL_DYNAMIC_DRAW
 import org.lwjgl.opengl.GL45C.glNamedBufferData
 import org.lwjgl.opengl.GL45C.nglNamedBufferSubData
 import org.lwjgl.system.MemoryUtil.*
-import java.nio.FloatBuffer
 import kotlin.math.max
 
 class Buffer(initialCapacity: Long) : IMeshResource {
@@ -23,28 +22,61 @@ class Buffer(initialCapacity: Long) : IMeshResource {
         glNamedBufferData(handle.id, initialCapacity, GL_DYNAMIC_DRAW)
     }
 
-    fun clear() {
+    fun reset() {
         offset = 0L
     }
 
     fun upload() {
-        nglNamedBufferSubData(handle.id, 0L, capacity, pointer)
+        nglNamedBufferSubData(handle.id, 0L, offset, pointer)
     }
 
-    operator fun plusAssign(value: Int) = write(4) {
+    fun int(value: Int) = write(4) {
         memPutInt(cursor, value)
     }
 
-    operator fun plusAssign(value: Float) = write(4) {
+    fun float(value: Float) = write(4) {
         memPutFloat(cursor, value)
     }
 
-    operator fun plusAssign(value: Double) = write(4) {
+    fun float(value: Double) = write(4) {
         memPutFloat(cursor, value.toFloat())
     }
 
-    operator fun plusAssign(value: Matrix4f) = write(64) {
-        memPutFloat(cursor +  0, value.m00())
+    fun vec(x: Int, y: Int) = write(8) {
+        memPutInt(cursor, x)
+        memPutInt(cursor + 4, y)
+    }
+
+    fun vec(x: Float, y: Float) = write(8) {
+        memPutFloat(cursor, x)
+        memPutFloat(cursor + 4, y)
+    }
+
+    fun vec(x: Double, y: Double) = write(8) {
+        memPutFloat(cursor, x.toFloat())
+        memPutFloat(cursor + 4, y.toFloat())
+    }
+
+    fun vec(x: Int, y: Int, z: Int) = write(12) {
+        memPutInt(cursor, x)
+        memPutInt(cursor + 4, y)
+        memPutInt(cursor + 8, z)
+    }
+
+    fun vec(x: Float, y: Float, z: Float) = write(12) {
+        memPutFloat(cursor, x)
+        memPutFloat(cursor + 4, y)
+        memPutFloat(cursor + 8, z)
+    }
+
+    fun vec(x: Double, y: Double, z: Double) = write(12) {
+        memPutFloat(cursor, x.toFloat())
+        memPutFloat(cursor + 4, y.toFloat())
+        memPutFloat(cursor + 8, z.toFloat())
+    }
+
+    fun mat(value: Matrix4f) = write(64) {
+        memPutFloat(cursor     , value.m00())
         memPutFloat(cursor +  4, value.m01())
         memPutFloat(cursor +  8, value.m02())
         memPutFloat(cursor + 12, value.m03())

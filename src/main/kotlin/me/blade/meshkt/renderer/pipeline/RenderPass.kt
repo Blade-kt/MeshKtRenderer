@@ -5,8 +5,8 @@ import org.lwjgl.opengl.GL11.GL_TRIANGLES
 import org.lwjgl.opengl.GL11C.glDrawArrays
 
 class RenderPass(val state: RenderState) {
-    var instanceSize = 6
     var instanceCount = 0
+    var instanceSize = 6
 
     fun render() {
         val vertexCount = instanceCount * instanceSize
@@ -14,9 +14,5 @@ class RenderPass(val state: RenderState) {
 
         state.validate()
         glDrawArrays(GL_TRIANGLES, 0, vertexCount)
-    }
-
-    companion object {
-
     }
 }
