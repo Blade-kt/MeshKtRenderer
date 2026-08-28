@@ -1,11 +1,15 @@
 package me.blade.meshkt
 
 import me.blade.meshkt.renderer.MeshRenderer
+import me.blade.meshkt.renderer.font.SDFGen
 import org.lwjgl.glfw.GLFW.*
 import org.lwjgl.opengl.GL
 import org.lwjgl.opengl.GL11C.*
 import org.lwjgl.system.MemoryStack
+import java.awt.Font
+import java.io.File
 import java.nio.IntBuffer
+import javax.imageio.ImageIO
 
 object MeshRendererExample {
     var viewportWidth = 1
@@ -13,6 +17,14 @@ object MeshRendererExample {
 
     @JvmStatic
     fun main(args: Array<String>) {
+        val texture = SDFGen.generateSDFGlyphMap(
+            Font("SansSerif", Font.PLAIN, 128)
+        )
+
+        ImageIO.write(texture, "png", File("${System.getProperty("user.dir")}/output/glyphs.png"))
+    }
+
+    private fun mainEntry() {
         glfwInit()
 
         glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4)
