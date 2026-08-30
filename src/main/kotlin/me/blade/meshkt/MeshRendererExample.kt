@@ -1,7 +1,6 @@
 package me.blade.meshkt
 
-import me.blade.meshkt.renderer.MeshRenderer
-import me.blade.meshkt.renderer.font.SDFGen
+import me.blade.meshkt.renderer.Mesh
 import org.lwjgl.glfw.GLFW.*
 import org.lwjgl.opengl.GL
 import org.lwjgl.opengl.GL11C.*
@@ -17,11 +16,12 @@ object MeshRendererExample {
 
     @JvmStatic
     fun main(args: Array<String>) {
-        val texture = SDFGen.generateSDFGlyphMap(
+        /*val texture = SDFGen.generateSDFGlyphMap(
             Font("SansSerif", Font.PLAIN, 128)
         )
 
-        ImageIO.write(texture, "png", File("${System.getProperty("user.dir")}/output/glyphs.png"))
+        ImageIO.write(texture, "png", File("${System.getProperty("user.dir")}/output/glyphs.png"))*/
+        mainEntry()
     }
 
     private fun mainEntry() {
@@ -54,17 +54,18 @@ object MeshRendererExample {
             viewportHeight = height
         }
 
+        glfwSwapInterval(0)
+
         while (true) {
             if (glfwWindowShouldClose(window)) {
                 break
             }
 
             glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT)
-            MeshRenderer.executor.pollEvents()
 
-            MeshRenderer.context.begin()
+            Mesh.setupState()
             MeshRenderer.frame()
-            MeshRenderer.context.end()
+            Mesh.revertState()
 
             glfwSwapBuffers(window)
             glfwPollEvents()

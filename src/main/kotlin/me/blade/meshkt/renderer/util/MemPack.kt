@@ -98,21 +98,21 @@ fun packVec4(
 /**
  * Packs color value into a single 32-bit ARGB integer.
  */
-fun packColorARGB8(value: Color): Int {
-    return packColorARGB8i(value.alpha, value.red, value.green, value.blue)
+fun packColorARGB(value: Color): Int {
+    return packColorARGB(value.alpha, value.red, value.green, value.blue)
 }
 
 /**
  * Packs color value into a single 32-bit ARGB integer.
  */
-fun packColorARGB8i(a: Int, r: Int, g: Int, b: Int): Int {
+fun packColorARGB(a: Int, r: Int, g: Int, b: Int): Int {
     return (a shl 24) or (r shl 16) or (g shl 8) or b
 }
 
 /**
  * Packs color value into a single 32-bit ARGB integer.
  */
-fun packColorARGB8f(a: Float, r: Float, g: Float, b: Float): Int {
+fun packColorARGB(a: Float, r: Float, g: Float, b: Float): Int {
     val range = 0..255
 
     val aByte = (a * 255).toInt().coerceIn(range)
@@ -120,12 +120,12 @@ fun packColorARGB8f(a: Float, r: Float, g: Float, b: Float): Int {
     val gByte = (g * 255).toInt().coerceIn(range)
     val bByte = (b * 255).toInt().coerceIn(range)
 
-    return packColorARGB8i(aByte, rByte, gByte, bByte)
+    return packColorARGB(aByte, rByte, gByte, bByte)
 }
 
 /**
  * Packs color value into a single 32-bit ARGB integer.
  */
-fun packColorARGB8d(a: Double, r: Double, g: Double, b: Double): Int {
-    return packColorARGB8f(a.toFloat(), r.toFloat(), g.toFloat(), b.toFloat())
+fun packColorARGB(a: Double, r: Double, g: Double, b: Double): Int {
+    return packColorARGB(a.toFloat(), r.toFloat(), g.toFloat(), b.toFloat())
 }

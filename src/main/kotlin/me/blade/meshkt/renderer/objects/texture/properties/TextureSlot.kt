@@ -37,4 +37,8 @@ enum class TextureSlot(val textureSlot: Int) {
     Slot31(GL_TEXTURE31);
 
     val unitIndex = textureSlot - GL_TEXTURE0
+
+    companion object {
+        val reversedEntries = entries.reversed()
+    }
 }

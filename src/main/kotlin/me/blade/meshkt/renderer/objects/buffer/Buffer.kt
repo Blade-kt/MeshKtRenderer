@@ -1,33 +1,45 @@
 package me.blade.meshkt.renderer.objects.buffer
 
-import me.blade.meshkt.renderer.resource.IMeshResource
+import me.blade.meshkt.renderer.objects.ObjectHandle
 import org.joml.Matrix4f
 import org.lwjgl.opengl.GL15C.GL_DYNAMIC_DRAW
+import org.lwjgl.opengl.GL15C.glDeleteBuffers
+import org.lwjgl.opengl.GL45C.glCreateBuffers
 import org.lwjgl.opengl.GL45C.glNamedBufferData
 import org.lwjgl.opengl.GL45C.nglNamedBufferSubData
 import org.lwjgl.system.MemoryUtil.*
+import java.awt.image.BufferedImage
 import kotlin.math.max
 
-class Buffer(initialCapacity: Long) : IMeshResource {
-    val handle = BufferHandle()
+class Buffer(initialCapacity: Long) : ObjectHandle(glCreateBuffers(), false) {
+    var pointer = NULL
+    var capacity = 0L
 
-    private var pointer = NULL
-    private var capacity = 0L
-
-    private var offset = 0L
+    var offset = 0L
     private val cursor get() = pointer + offset
+
+    private var dirty = true
 
     init {
         allocate(initialCapacity)
-        glNamedBufferData(handle.id, initialCapacity, GL_DYNAMIC_DRAW)
+        glNamedBufferData(id, initialCapacity, GL_DYNAMIC_DRAW)
     }
 
     fun reset() {
         offset = 0L
+        dirty = true
     }
 
     fun upload() {
-        nglNamedBufferSubData(handle.id, 0L, offset, pointer)
+        if (!dirty) return
+        nglNamedBufferSubData(id, 0L, offset, pointer)
+        dirty = false
+    }
+
+    fun skip(bytes: Int) = write(bytes.toLong()) {}
+
+    fun byte(value: Byte) = write(1) {
+        memPutByte(cursor, value)
     }
 
     fun int(value: Int) = write(4) {
@@ -42,7 +54,7 @@ class Buffer(initialCapacity: Long) : IMeshResource {
         memPutFloat(cursor, value.toFloat())
     }
 
-    fun vec(x: Int, y: Int) = write(8) {
+    fun ivec(x: Int, y: Int) = write(8) {
         memPutInt(cursor, x)
         memPutInt(cursor + 4, y)
     }
@@ -57,7 +69,7 @@ class Buffer(initialCapacity: Long) : IMeshResource {
         memPutFloat(cursor + 4, y.toFloat())
     }
 
-    fun vec(x: Int, y: Int, z: Int) = write(12) {
+    fun ivec(x: Int, y: Int, z: Int) = write(12) {
         memPutInt(cursor, x)
         memPutInt(cursor + 4, y)
         memPutInt(cursor + 8, z)
@@ -100,6 +112,7 @@ class Buffer(initialCapacity: Long) : IMeshResource {
             allocate(capacity + max(capacity, bytes))
         }
         block()
+        dirty = true
         offset += bytes
     }
 
@@ -117,13 +130,18 @@ class Buffer(initialCapacity: Long) : IMeshResource {
 
         if (pointer != NULL) {
             memCopy(pointer, newPointer, capacity)
+            nmemFree(pointer)
         }
 
         pointer = newPointer
         capacity = targetCapacity
     }
 
-    override fun free() {
-        handle.free()
+    override fun delete() {
+        glDeleteBuffers(id)
+
+        if (pointer != NULL) {
+            nmemFree(pointer)
+        }
     }
 }

@@ -14,11 +14,15 @@ abstract class ObjectHandle(
         return identifier
     }
 
+    fun invalidate() {
+        isValid = false
+    }
+
     final override fun free() {
         if (!isExternal) {
             delete()
         }
-        isValid = false
+        invalidate()
     }
 
     protected abstract fun delete()
