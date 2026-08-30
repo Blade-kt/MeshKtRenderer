@@ -8,7 +8,6 @@ import org.lwjgl.opengl.GL45C.glCreateBuffers
 import org.lwjgl.opengl.GL45C.glNamedBufferData
 import org.lwjgl.opengl.GL45C.nglNamedBufferSubData
 import org.lwjgl.system.MemoryUtil.*
-import java.awt.image.BufferedImage
 import kotlin.math.max
 
 class Buffer(initialCapacity: Long) : ObjectHandle(glCreateBuffers(), false) {
@@ -19,10 +18,10 @@ class Buffer(initialCapacity: Long) : ObjectHandle(glCreateBuffers(), false) {
     private val cursor get() = pointer + offset
 
     private var dirty = true
+    private var capacityDirty = false
 
     init {
         allocate(initialCapacity)
-        glNamedBufferData(id, initialCapacity, GL_DYNAMIC_DRAW)
     }
 
     fun reset() {
@@ -32,6 +31,10 @@ class Buffer(initialCapacity: Long) : ObjectHandle(glCreateBuffers(), false) {
 
     fun upload() {
         if (!dirty) return
+        if (capacityDirty) {
+            capacityDirty = false
+            glNamedBufferData(id, capacity, GL_DYNAMIC_DRAW)
+        }
         nglNamedBufferSubData(id, 0L, offset, pointer)
         dirty = false
     }
@@ -135,6 +138,7 @@ class Buffer(initialCapacity: Long) : ObjectHandle(glCreateBuffers(), false) {
 
         pointer = newPointer
         capacity = targetCapacity
+        capacityDirty = true
     }
 
     override fun delete() {

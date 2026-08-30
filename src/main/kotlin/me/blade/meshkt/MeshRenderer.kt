@@ -21,6 +21,7 @@ import org.lwjgl.glfw.GLFW.glfwGetTime
 import java.awt.Color
 import java.awt.Font
 import kotlin.collections.associateWith
+import kotlin.math.sin
 
 object MeshRenderer {
     val glyphMap = buildGlyphMap(
@@ -74,10 +75,11 @@ object MeshRenderer {
         allocateStorages(1024,
             "MatrixBuffer", "InstanceBuffer",
             "RectInstanceBuffer",
-            "StringDataBuffer", "CharInstanceBuffer", "GlyphBuffer"
+            "StringInstanceBuffer", "CharInstanceBuffer", "GlyphBuffer"
         )
 
         write("GlyphBuffer") {
+            reset()
             glyphMap.charData.values.forEach { glyphData ->
                 vec(glyphData.u0, glyphData.v0)
                 vec(glyphData.u1, glyphData.v1)
@@ -116,33 +118,42 @@ object MeshRenderer {
         shader.write("InstanceBuffer") {
             reset()
 
-            int(packVec2(
-                4, 28, // 4 bits for buffer index, 28 for instance index
-                0, 0  // first buffer (rect), first instance
-            ))
+            // 4 bits for buffer index, 28 for instance index
+            int(packVec2(4, 28, 1, 0)) // B
+            int(packVec2(4, 28, 1, 1)) // l
+            int(packVec2(4, 28, 1, 2)) // a
+            int(packVec2(4, 28, 1, 3)) // d
+            int(packVec2(4, 28, 1, 4)) // e
 
             upload()
         }
 
-        shader.write("RectInstanceBuffer") {
+        val height = 10.0 + (sin(glfwGetTime()) * 0.5 + 0.5) * 400
+        shader.write("StringInstanceBuffer") {
             reset()
 
-            vec(10.0, 10.0)
-            val scale = 1.0
-            vec(1000.0 * scale, 1000.0 * scale)
-            int(packColorARGB(Color.WHITE))
-            int(packVec3(
-                4, 20, 8, // matrices are packed by 4/20/8 bits for proj/view/model
-                0, 1, 2 // for proj, take 0th matrix from MatrixBuffer, and so on
-            ))
-            int(0) // 0th texture
-            skip(4) // alignment
+            int(packVec3(4, 20, 8, 0, 1, 2)) // matrices
+            float(height)
+
+            upload()
+        }
+
+        shader.write("CharInstanceBuffer") {
+            reset()
+
+            var x = 0.0
+            "Blade".forEach {
+                vec(10.0 + x, 200.0) // position
+                int(0) // string index
+                int(glyphMap.charIndexMap[it]!!)
+                x += glyphMap.charData[it]!!.getCharWidth(height)
+            }
 
             upload()
         }
 
         Mesh.boundShader = shader
         Mesh.boundTexture[TextureSlot.Slot0] = sdfTexture
-        Mesh.render(shader, 1)
+        Mesh.render(shader, 5)
     }
 }

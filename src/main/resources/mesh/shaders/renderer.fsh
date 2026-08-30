@@ -56,7 +56,7 @@ void main() {
     vec4 textureColor = sampleTexture(s_SAMPLER_UV);
 
     if (BUFFER_INDEX == RECT_BUFFER_INDEX) {
-        COLOR_ATTACHMENT0 = s_VERTEX_COLOR * vec4(sdf, sdf, sdf, 1.0);
+        COLOR_ATTACHMENT0 = s_VERTEX_COLOR;
         return;
     }
 

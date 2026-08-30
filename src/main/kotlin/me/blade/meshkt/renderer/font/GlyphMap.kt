@@ -41,7 +41,12 @@ data class GlyphData(
     var v0: Double,
     var u1: Double,
     var v1: Double,
-)
+) {
+    fun getCharWidth(height: Double): Double {
+        val aspectRatio = (u1 - u0) / (v1 - v0)
+        return height * aspectRatio
+    }
+}
 
 fun buildGlyphMap(fontIn: Font): GlyphMap {
     val font = fontIn.deriveFont(FONT_SIZE)

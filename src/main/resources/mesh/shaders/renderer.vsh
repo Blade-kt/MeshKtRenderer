@@ -41,27 +41,27 @@ struct Glyph {
 };
 
 
-layout (std430) buffer MatrixBuffer {
+layout (std430) readonly buffer MatrixBuffer {
     mat4 matrices[];
 } matrixAccess;
 
-layout (std430) buffer InstanceBuffer {
+layout (std430) readonly buffer InstanceBuffer {
     int instances[];
 } instanceAccess;
 
-layout (std430) buffer RectInstanceBuffer { // renderable #0
+layout (std430) readonly buffer RectInstanceBuffer { // renderable #0
     RectInstance rectInstances[];
 } rectAccess;
 
-layout (std430) buffer StringInstanceBuffer {
+layout (std430) readonly buffer StringInstanceBuffer {
     StringInstance stringInstances[];
 } stringAccess;
 
-layout (std430) buffer CharInstanceBuffer { // renderable #1
+layout (std430) readonly buffer CharInstanceBuffer { // renderable #1
     CharInstance charInstances[];
 } charAccess;
 
-layout (std430) buffer GlyphBuffer {
+layout (std430) readonly buffer GlyphBuffer {
     Glyph glyphInstances[];
 } glyphAccess;
 
@@ -96,7 +96,7 @@ void setVertexPosition(int packedMatrices, vec4 rawPosition) {
 
 
 
-void RECT(RectInstance rectInstance, vec2 uv01) {
+void _RECT(RectInstance rectInstance, vec2 uv01) {
     vec4 rectPosition = vec4(mix(rectInstance.pos1, rectInstance.pos2, uv01), 0.0, 1.0);
 
     s_VERTEX_COLOR = unpackColorARGB(rectInstance.packedColorARGB);
@@ -107,7 +107,7 @@ void RECT(RectInstance rectInstance, vec2 uv01) {
     setVertexPosition(rectInstance.packedMatrices, rectPosition);
 }
 
-void CHAR(CharInstance charInstance, vec2 uv01) {
+void _CHAR(CharInstance charInstance, vec2 uv01) {
     StringInstance stringInstance = stringAccess.stringInstances[charInstance.stringIndex];
     Glyph glyphInfo = glyphAccess.glyphInstances[charInstance.glyphIndex];
 
@@ -122,7 +122,7 @@ void CHAR(CharInstance charInstance, vec2 uv01) {
     vec4 charPosition = vec4(mix(pos1, pos2, uv01), 0.0, 1.0);
 
     s_VERTEX_COLOR = vec4(1.0);
-    s_TEXTURE_INDEX = 15.0;
+    s_TEXTURE_INDEX = 0.0;
 
     s_INSTANCE_UV = uv01;
     s_SAMPLER_UV = mix(glyphInfo.uv1, glyphInfo.uv2, uv01);
@@ -138,23 +138,22 @@ void main() {
     int bufferIndex    = instanceData.x;
     int instanceIndex  = instanceData.y;
 
-    int vertexIndex = gl_VertexID % 6;   vec2 uv01 = vec2(1.0, 1.0);      // top-right (i == 2 or i == 4)
+    int vertexIndex = gl_VertexID % 6;   vec2 uv01 = vec2(1.0, 1.0); // top-right (i == 2 or i == 4)
     if (vertexIndex == 5)                     uv01 = vec2(1.0, 0.0); // bottom-right
     if (vertexIndex == 1)                     uv01 = vec2(0.0, 1.0); // top-left
-    if (vertexIndex == 0 || vertexIndex == 3) uv01 = vec2(0.0, 0.0);      // bottom-left
+    if (vertexIndex == 0 || vertexIndex == 3) uv01 = vec2(0.0, 0.0); // bottom-left
 
     s_DRAW_BUFFER_INDEX = float(bufferIndex);
-    s_TEX_COORD = uv01;
 
     if (bufferIndex == RECT_BUFFER_INDEX) {
         RectInstance rect = rectAccess.rectInstances[instanceIndex];
-        RECT(rect, uv01);
+        _RECT(rect, uv01);
         return;
     }
 
     if (bufferIndex == CHAR_BUFFER_INDEX) {
-        CharInstance char = charAccess.charInstances[instanceIndex];
-        CHAR(char, uv01);
+        CharInstance charInstance = charAccess.charInstances[instanceIndex];
+        _CHAR(charInstance, uv01);
         return;
     }
 }
