@@ -26,7 +26,6 @@ private val supportedCharacters = buildString {
 
 data class GlyphMap(
     val image: BufferedImage,
-    val normalizedTopline: Double,
     val normalizedBaseline: Double,
     val charData: Map<Char, GlyphData>
 ) {
@@ -88,13 +87,8 @@ fun buildGlyphMap(fontIn: Font): GlyphMap {
 
     graphics.dispose()
 
-    val ascent = abs(metrics.ascent.toDouble()) / metrics.height
-    val descend = abs(metrics.descent.toDouble()) / metrics.height
-
-    val topline = 0.0
-    val baseline = ascent
-
-    return GlyphMap(image, topline, baseline, charMap)
+    val baseline = abs(metrics.ascent.toDouble()) / metrics.height
+    return GlyphMap(image,baseline, charMap)
 }
 
 private fun getRenderPositions(chars: List<BufferedImage>, rowHeight: Int, minSize: Int = 128): Pair<ArrayList<Pair<Int, Int>>, Int> {

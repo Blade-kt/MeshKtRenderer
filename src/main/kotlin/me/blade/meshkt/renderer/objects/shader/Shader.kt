@@ -22,9 +22,9 @@ class Shader : ObjectHandle(glCreateProgram(), false) {
         glCompileShader(shader)
 
         if (glGetShaderi(shader, GL_COMPILE_STATUS) == 0) {
-            val log = glGetShaderInfoLog(id, 1024)
-            //glDeleteShader(shader)
-            //println("Failed to compile $type shader: $log")
+            val log = glGetShaderInfoLog(id, 2048)
+            glDeleteShader(shader)
+            throw RuntimeException("Failed to compile $type shader: $log")
         }
 
         glAttachShader(id, shader)

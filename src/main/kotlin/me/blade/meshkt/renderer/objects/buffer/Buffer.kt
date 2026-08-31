@@ -53,6 +53,10 @@ class Buffer(initialCapacity: Long) : ObjectHandle(glCreateBuffers(), false) {
         memPutByte(cursor, value)
     }
 
+    fun long(value: Long) = write(8) {
+        memPutAddress(cursor, value)
+    }
+
     fun int(value: Int) = write(4) {
         memPutInt(cursor, value)
     }
@@ -112,7 +116,7 @@ class Buffer(initialCapacity: Long) : ObjectHandle(glCreateBuffers(), false) {
         memPutFloat(cursor + 12, w)
     }
 
-    fun vec4(x: Double, y: Double, z: Double, w: Float) = write(16) {
+    fun vec4(x: Double, y: Double, z: Double, w: Double) = write(16) {
         memPutFloat(cursor, x.toFloat())
         memPutFloat(cursor + 4, y.toFloat())
         memPutFloat(cursor + 8, z.toFloat())

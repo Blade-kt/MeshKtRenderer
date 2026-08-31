@@ -12,13 +12,10 @@ import me.blade.meshkt.renderer.objects.texture.properties.TextureMagFilter
 import me.blade.meshkt.renderer.objects.texture.properties.TextureMinFilter
 import me.blade.meshkt.renderer.objects.texture.properties.TexturePixelFormat
 import me.blade.meshkt.renderer.objects.texture.properties.TexturePixelType
-import me.blade.meshkt.renderer.objects.texture.properties.TextureSlot
 import me.blade.meshkt.renderer.util.packVec2
 import me.blade.meshkt.renderer.util.packVec3
 import org.joml.Matrix4f
-import org.lwjgl.glfw.GLFW.glfwGetTime
 import java.awt.Font
-import kotlin.math.sin
 
 object MeshRenderer {
     val glyphMap = buildGlyphMap(
@@ -70,7 +67,7 @@ object MeshRenderer {
 
         link()
         storage.allocateNames(1024,
-            "MatrixBuffer", "InstanceBuffer",
+            "TextureBuffer", "MatrixBuffer", "InstanceBuffer",
             "RectInstanceBuffer",
             "StringInstanceBuffer", "CharInstanceBuffer", "GlyphBuffer"
         )
@@ -91,6 +88,7 @@ object MeshRenderer {
     var lastPrintTime = time
 
     fun frame() {
+        val textureHandles = Array<Long>(16) { 0 }
         frameCount++
 
         if (time - lastPrintTime > 1000) {
@@ -152,10 +150,17 @@ object MeshRenderer {
             upload()
         }
 
+        textureHandles[0] = sdfTexture.bindlessHandle
+        shader.storage.write("TextureBuffer") {
+            reset()
+            textureHandles.forEach { ptr ->
+                long(ptr)
+            }
+            upload()
+        }
+
         Mesh.boundShader = shader
-        shader.uniforms.float("u_NORMALIZED_FONT_TOPLINE", glyphMap.normalizedTopline)
         shader.uniforms.float("u_NORMALIZED_FONT_BASELINE", glyphMap.normalizedBaseline)
-        Mesh.boundTexture[TextureSlot.Slot0] = sdfTexture
         Mesh.render(shader, 8)
     }
 }

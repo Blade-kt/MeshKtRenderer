@@ -29,7 +29,8 @@ object MeshRendererExample {
         val window = glfwCreateWindow(1024, 768, "MeshRenderer Demo", 0L, 0L)
 
         glfwMakeContextCurrent(window)
-        GL.createCapabilities()
+        val caps = GL.createCapabilities()
+        println("Bindless texture support: ${caps.GL_ARB_bindless_texture}")
 
         val stack = MemoryStack.stackPush()
         val width: IntBuffer = stack.ints(0)
