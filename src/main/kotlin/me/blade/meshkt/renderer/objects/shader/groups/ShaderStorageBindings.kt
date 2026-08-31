@@ -23,8 +23,10 @@ class ShaderStorageBindings(private val shader: Shader) {
         ssboIndex
     }
 
-    fun allocate(name: String, initialCapacity: Long = 1024) {
-        this[name] = createBuffer(initialCapacity)
+    fun allocate(name: String, initialCapacity: Long = 1024, block: Buffer.() -> Unit = {}) {
+        val buffer = createBuffer(initialCapacity)
+        this[name] = buffer
+        buffer.block()
     }
 
     fun allocateNames(initialCapacity: Long, vararg names: String) {

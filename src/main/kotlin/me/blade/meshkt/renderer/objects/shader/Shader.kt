@@ -12,6 +12,10 @@ class Shader : ObjectHandle(glCreateProgram(), false) {
 
     private val attachedShaders = mutableListOf<Int>()
 
+    fun uniforms(block: UniformWriter.() -> Unit) {
+        uniforms.block()
+    }
+
     fun compileSource(
         type: ShaderType,
         block: () -> String

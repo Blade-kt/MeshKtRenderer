@@ -1,7 +1,9 @@
 package me.blade.meshkt.renderer.objects.shader.groups
 
 import me.blade.meshkt.renderer.objects.shader.Shader
+import org.joml.Matrix4f
 import org.lwjgl.opengl.GL20C.*
+import java.nio.FloatBuffer
 
 class UniformWriter(private val shader: Shader) {
     private val uniformCache = mutableMapOf<String, Int>()
@@ -52,6 +54,12 @@ class UniformWriter(private val shader: Shader) {
 
     fun vec4(name: String, x: Double, y: Double, z: Double, w: Double) {
         glUniform4f(getUniformLocation(name), x.toFloat(), y.toFloat(), z.toFloat(), w.toFloat())
+    }
+
+    private val matrix4fBuffer = FloatArray(16)
+    fun mat4(name: String, matrix: Matrix4f) {
+        matrix.get(matrix4fBuffer)
+        glUniformMatrix4fv(getUniformLocation(name), false, matrix4fBuffer)
     }
 
     private fun getUniformLocation(name: String): Int {

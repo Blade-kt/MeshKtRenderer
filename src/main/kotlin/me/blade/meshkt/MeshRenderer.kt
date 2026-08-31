@@ -3,66 +3,35 @@ package me.blade.meshkt
 import me.blade.meshkt.renderer.Mesh
 import me.blade.meshkt.renderer.font.buildGlyphMap
 import me.blade.meshkt.renderer.font.sdf
-import me.blade.meshkt.renderer.objects.createBuffer
 import me.blade.meshkt.renderer.objects.createShader
-import me.blade.meshkt.renderer.objects.createTexture
 import me.blade.meshkt.renderer.objects.shader.properties.ShaderType
-import me.blade.meshkt.renderer.objects.texture.properties.TextureInternalFormat
-import me.blade.meshkt.renderer.objects.texture.properties.TextureMagFilter
-import me.blade.meshkt.renderer.objects.texture.properties.TextureMinFilter
-import me.blade.meshkt.renderer.objects.texture.properties.TexturePixelFormat
-import me.blade.meshkt.renderer.objects.texture.properties.TexturePixelType
 import me.blade.meshkt.renderer.util.packVec2
 import me.blade.meshkt.renderer.util.packVec3
+import me.blade.meshkt.renderer.util.resourceText
 import org.joml.Matrix4f
+import org.lwjgl.glfw.GLFW.glfwGetTime
+import org.lwjgl.opengl.GL11C.GL_BLEND
+import org.lwjgl.opengl.GL11C.GL_ONE_MINUS_SRC_ALPHA
+import org.lwjgl.opengl.GL11C.GL_SRC_ALPHA
+import org.lwjgl.opengl.GL11C.glBlendFunc
+import org.lwjgl.opengl.GL11C.glEnable
 import java.awt.Font
+import kotlin.math.sin
 
 object MeshRenderer {
     val glyphMap = buildGlyphMap(
         Font("SansSerif", Font.PLAIN, 128)
     )
 
-    val sdfTexture = createTexture {
-        val image = sdf(glyphMap.image)
-        val buffer = createBuffer {
-            repeat(image.height) { y ->
-                repeat(image.width) { x ->
-                    byte(image.raster.getSample(x, y, 0).toByte())
-                }
-            }
-        }
-
-        filtering {
-            minFilter = TextureMinFilter.Linear
-            magFilter = TextureMagFilter.Linear
-        }
-
-        storage {
-            width = image.width
-            height = image.height
-
-            internalFormat = TextureInternalFormat.R8
-            uploadPixelFormat = TexturePixelFormat.Red
-            uploadPixelType = TexturePixelType.UnsignedByte
-
-            allocate()
-            upload(buffer.pointer)
-        }
-        buffer.free()
-    }
+    val sdfTexture = sdf(glyphMap.image)
 
     val shader = createShader {
-        fun loadShaderText(path: String): String {
-            val stream = javaClass.getResourceAsStream(path)!!
-            return stream.bufferedReader(Charsets.UTF_8).readText()
-        }
-
         compileSource(ShaderType.Vertex) {
-            loadShaderText("/mesh/shaders/renderer.vsh")
+            resourceText("/mesh/shaders/renderer.vsh")
         }
 
         compileSource(ShaderType.Fragment) {
-            loadShaderText("/mesh/shaders/renderer.fsh")
+            resourceText("/mesh/shaders/renderer.fsh")
         }
 
         link()
@@ -126,7 +95,7 @@ object MeshRenderer {
             upload()
         }
 
-        val height = 200.0
+        val height = 10.0 + (sin(glfwGetTime()) * 0.5 + 0.5) * 1000.0
         shader.storage.write("StringInstanceBuffer") {
             reset()
 
@@ -161,6 +130,9 @@ object MeshRenderer {
 
         Mesh.boundShader = shader
         shader.uniforms.float("u_NORMALIZED_FONT_BASELINE", glyphMap.normalizedBaseline)
+
+        glEnable(GL_BLEND)
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
         Mesh.render(shader, 8)
     }
 }

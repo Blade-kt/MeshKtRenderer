@@ -1,80 +1,119 @@
 package me.blade.meshkt.renderer.font
 
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.async
-import kotlinx.coroutines.awaitAll
-import kotlinx.coroutines.runBlocking
+import me.blade.meshkt.renderer.Mesh
+import me.blade.meshkt.renderer.objects.createBuffer
+import me.blade.meshkt.renderer.objects.createFramebuffer
+import me.blade.meshkt.renderer.objects.createShader
+import me.blade.meshkt.renderer.objects.createTexture
+import me.blade.meshkt.renderer.objects.framebuffer.properties.FramebufferAttachment
+import me.blade.meshkt.renderer.objects.shader.properties.ShaderType
+import me.blade.meshkt.renderer.objects.texture.Texture
+import me.blade.meshkt.renderer.objects.texture.properties.TextureInternalFormat
+import me.blade.meshkt.renderer.objects.texture.properties.TextureMagFilter
+import me.blade.meshkt.renderer.objects.texture.properties.TextureMinFilter
+import me.blade.meshkt.renderer.objects.texture.properties.TexturePixelFormat
+import me.blade.meshkt.renderer.objects.texture.properties.TexturePixelType
+import me.blade.meshkt.renderer.util.resourceText
+import org.joml.Matrix4f
+import org.lwjgl.opengl.GL11C.GL_VIEWPORT
+import org.lwjgl.opengl.GL11C.glGetIntegerv
+import org.lwjgl.opengl.GL11C.glViewport
 import java.awt.image.BufferedImage
-import kotlin.math.sqrt
 
 const val SDF_DOWNSCALE = 8
-const val SDF_SCAN = 16
-private val scope = CoroutineScope(Dispatchers.Default)
+const val SDF_SCAN = 32
 
-fun sdf(src: BufferedImage): BufferedImage {
-    val downscale = SDF_DOWNSCALE
-    val dst = BufferedImage(src.width / downscale, src.height / downscale, BufferedImage.TYPE_BYTE_GRAY)
-    val raster = dst.raster
+fun sdf(image: BufferedImage): Texture {
+    val srcWidth = image.width
+    val srcHeight = image.height
+    val dstWidth = srcWidth / SDF_DOWNSCALE
+    val dstHeight = srcHeight / SDF_DOWNSCALE
 
-    fun isWhite(x: Int, y: Int): Boolean {
-        if (x !in 0 until src.width || y !in 0 until src.height) return false
-        return (src.raster.getSample(x, y, 0)) >= 128
-    }
-
-    fun distanceSq(x1: Int, y1: Int, x2: Int, y2: Int): Int {
-        val dx = x1 - x2
-        val dy = y1 - y2
-        return dx * dx + dy * dy
-    }
-
-    val jobs = (0 until dst.width).map { x ->
-        scope.async {
-            repeat(dst.height) { y ->
-                val srcX = x * downscale
-                val srcY = y * downscale
-
-                val boundaryPixelsNearby = arrayListOf<Pair<Int, Int>>()
-                val scanDistance = SDF_SCAN
-
-                repeat(scanDistance * 2) { xOffset ->
-                    repeat(scanDistance * 2) { yOffset ->
-                        val nx = srcX + xOffset - scanDistance
-                        val ny = srcY + yOffset - scanDistance
-
-                        val neighbours = listOf(
-                            isWhite(nx + 0, ny - 1), // center top
-
-                            isWhite(nx - 1, ny + 0), // left center
-                            isWhite(nx + 1, ny + 0), // right center
-
-                            isWhite(nx + 0, ny + 1), // center bottom
-                        )
-
-                        if (isWhite(nx, ny) && neighbours.any { !it }) {
-                            boundaryPixelsNearby.add(Pair(nx, ny))
-                        }
+    val inputTexture = createTexture {
+        storage {
+            val textureData = createBuffer {
+                repeat(srcHeight) { y ->
+                    repeat(srcWidth) { x ->
+                        byte(image.raster.getSample(x, y, 0).toByte())
                     }
                 }
-
-                val insideSign = if (isWhite(srcX, srcY)) 1.0 else -1.0
-
-                val distanceSq = boundaryPixelsNearby.minOfOrNull { (bx, by) ->
-                    distanceSq(bx, by, srcX, srcY).toDouble().div(downscale)
-                } ?: (scanDistance * scanDistance).toDouble()
-
-                val distance = sqrt(distanceSq)
-                val normalizedDistance = distance / scanDistance
-                val brightness = 0.5 + normalizedDistance * insideSign
-
-                raster.setSample(x, y, 0, (255 * brightness).toInt().coerceIn(0..255))
             }
+
+            width = srcWidth
+            height = srcHeight
+
+            internalFormat = TextureInternalFormat.R8
+            uploadPixelFormat = TexturePixelFormat.Red
+            uploadPixelType = TexturePixelType.UnsignedByte
+
+            allocate()
+            upload(textureData.pointer)
+            textureData.free()
         }
     }
 
-    runBlocking {
-        jobs.awaitAll()
+    val outputTexture = createTexture {
+        filtering {
+            minFilter = TextureMinFilter.Linear
+            magFilter = TextureMagFilter.Linear
+        }
+
+        storage {
+            width = dstWidth
+            height = dstHeight
+
+            internalFormat = TextureInternalFormat.RGBA16F
+            allocate()
+        }
     }
 
-    return dst
+    val framebuffer = createFramebuffer {
+        attachments[FramebufferAttachment.Color0] = outputTexture
+        drawTargets = arrayOf(FramebufferAttachment.Color0)
+        validate()
+    }
+
+    val shader = createShader {
+        compileSource(ShaderType.Vertex) {
+            resourceText("/mesh/shaders/sdfgen.vsh")
+        }
+
+        compileSource(ShaderType.Fragment) {
+            resourceText("/mesh/shaders/sdfgen.fsh")
+        }
+
+        link()
+
+        storage.allocate("TextureBuffer") {
+            long(inputTexture.bindlessHandle)
+            upload()
+        }
+    }
+
+    Mesh.boundShader = shader
+
+    shader.uniforms {
+        mat4("u_MATRIX", Matrix4f().ortho(0f, dstWidth.toFloat(), 0f, dstHeight.toFloat(), -1f, 1f))
+        vec2("u_SRC_SIZE", srcWidth.toFloat(), srcHeight.toFloat())
+        vec2("u_DST_SIZE", dstWidth.toFloat(), dstHeight.toFloat())
+        int("u_SDF_DOWNSCALE", SDF_DOWNSCALE)
+        int("u_SDF_SCAN", SDF_SCAN)
+    }
+
+    val prevFBO = Mesh.writeFramebuffer
+    val prevViewport = IntArray(4).also {
+        glGetIntegerv(GL_VIEWPORT, it)
+    }
+
+    glViewport(0, 0, dstWidth, dstHeight)
+    Mesh.writeFramebuffer = framebuffer
+    Mesh.render(shader, 1)
+    Mesh.writeFramebuffer = prevFBO
+    glViewport(prevViewport[0], prevViewport[1], prevViewport[2], prevViewport[3])
+
+    inputTexture.free()
+    framebuffer.free()
+    shader.free()
+
+    return outputTexture
 }

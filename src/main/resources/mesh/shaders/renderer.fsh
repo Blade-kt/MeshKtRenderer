@@ -36,14 +36,14 @@ void main() {
         return;
     }
 
+    /**if (s_INSTANCE_UV.y > u_NORMALIZED_FONT_BASELINE) {
+        fontColor *= vec4(0.5, 0.5, 0.5, 1.0);
+    }*/
     if (BUFFER_INDEX == CHAR_BUFFER_INDEX) {
-        float smoothness = fwidth(textureColor.r) * 0.5;
+        float rawSDF = textureColor.r;
+        float smoothness = fwidth(rawSDF) * 0.5;
         float sdf = smoothstep(0.5 - smoothness, 0.5 + smoothness, textureColor.r);
-        vec4 fontColor = mix(vec4(1.0, 0.3, 0.3, 1.0), vec4(1.0), sdf);
-
-        if (s_INSTANCE_UV.y > u_NORMALIZED_FONT_BASELINE) {
-            fontColor *= vec4(0.5, 0.5, 0.5, 1.0);
-        }
+        vec4 fontColor = vec4(1.0, 1.0, 1.0, sdf);
         COLOR_ATTACHMENT0 = s_VERTEX_COLOR * fontColor;
         return;
     }
