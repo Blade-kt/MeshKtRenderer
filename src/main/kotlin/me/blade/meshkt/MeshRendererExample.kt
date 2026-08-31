@@ -16,11 +16,6 @@ object MeshRendererExample {
 
     @JvmStatic
     fun main(args: Array<String>) {
-        /*val texture = SDFGen.generateSDFGlyphMap(
-            Font("SansSerif", Font.PLAIN, 128)
-        )
-
-        ImageIO.write(texture, "png", File("${System.getProperty("user.dir")}/output/glyphs.png"))*/
         mainEntry()
     }
 

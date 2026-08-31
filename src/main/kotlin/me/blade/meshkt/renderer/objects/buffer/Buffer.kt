@@ -22,6 +22,12 @@ class Buffer(initialCapacity: Long) : ObjectHandle(glCreateBuffers(), false) {
 
     init {
         allocate(initialCapacity)
+
+        // for some drivers to glBindBufferBase an SSBO,
+        // you need to allocate it on gpu side (even if it's not gonna get read by the shader)
+        // otherwise you will get a GL_INVALID_OPERATION and no rendering output
+        glNamedBufferData(id, initialCapacity, GL_DYNAMIC_DRAW)
+        capacityDirty = false
     }
 
     fun reset() {
@@ -30,7 +36,9 @@ class Buffer(initialCapacity: Long) : ObjectHandle(glCreateBuffers(), false) {
     }
 
     fun upload() {
+        if (offset == 0L) return
         if (!dirty) return
+
         if (capacityDirty) {
             capacityDirty = false
             glNamedBufferData(id, capacity, GL_DYNAMIC_DRAW)
