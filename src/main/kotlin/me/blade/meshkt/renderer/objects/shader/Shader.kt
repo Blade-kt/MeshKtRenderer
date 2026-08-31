@@ -1,29 +1,14 @@
 package me.blade.meshkt.renderer.objects.shader
 
 import me.blade.meshkt.renderer.objects.ObjectHandle
-import me.blade.meshkt.renderer.objects.buffer.Buffer
-import me.blade.meshkt.renderer.objects.createBuffer
-import me.blade.meshkt.renderer.objects.shader.properties.ShaderStorageBindings
+import me.blade.meshkt.renderer.objects.shader.groups.ShaderStorageBindings
+import me.blade.meshkt.renderer.objects.shader.groups.UniformWriter
 import me.blade.meshkt.renderer.objects.shader.properties.ShaderType
 import org.lwjgl.opengl.GL20C.*
 
 class Shader : ObjectHandle(glCreateProgram(), false) {
     val storage = ShaderStorageBindings(this)
-
-    fun allocateStorage(name: String, initialCapacity: Long = 1024) {
-        storage[name] = createBuffer(initialCapacity)
-    }
-
-    fun allocateStorages(initialCapacity: Long, vararg names: String) {
-        names.forEach {
-            allocateStorage(it, initialCapacity)
-        }
-    }
-
-    fun write(name: String, block: Buffer.() -> Unit) {
-        val buffer = storage[name]
-        block(buffer)
-    }
+    val uniforms = UniformWriter(this)
 
     private val attachedShaders = mutableListOf<Int>()
 

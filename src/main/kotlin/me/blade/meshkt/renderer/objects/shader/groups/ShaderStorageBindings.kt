@@ -1,12 +1,10 @@
-package me.blade.meshkt.renderer.objects.shader.properties
+package me.blade.meshkt.renderer.objects.shader.groups
 
 import me.blade.meshkt.renderer.objects.buffer.Buffer
+import me.blade.meshkt.renderer.objects.createBuffer
 import me.blade.meshkt.renderer.objects.shader.Shader
-import org.lwjgl.opengl.GL30C.glBindBufferBase
-import org.lwjgl.opengl.GL43C.GL_SHADER_STORAGE_BLOCK
-import org.lwjgl.opengl.GL43C.GL_SHADER_STORAGE_BUFFER
-import org.lwjgl.opengl.GL43C.glGetProgramResourceIndex
-import org.lwjgl.opengl.GL43C.glShaderStorageBlockBinding
+import org.lwjgl.opengl.GL30C
+import org.lwjgl.opengl.GL43C
 
 class ShaderStorageBindings(private val shader: Shader) {
     private val appliedBindings = hashMapOf<Int, Buffer>()
@@ -20,15 +18,30 @@ class ShaderStorageBindings(private val shader: Shader) {
 
     private fun storageIndex(name: String) = ssboNameMap.getOrPut(name) {
         if (++ssboIndex >= 16) throw RuntimeException("Reached SSBO binding limit $ssboIndex")
-        val blockIndex = glGetProgramResourceIndex(shader.id, GL_SHADER_STORAGE_BLOCK, name)
-        glShaderStorageBlockBinding(shader.id, blockIndex, ssboIndex)
+        val blockIndex = GL43C.glGetProgramResourceIndex(shader.id, GL43C.GL_SHADER_STORAGE_BLOCK, name)
+        GL43C.glShaderStorageBlockBinding(shader.id, blockIndex, ssboIndex)
         ssboIndex
+    }
+
+    fun allocate(name: String, initialCapacity: Long = 1024) {
+        this[name] = createBuffer(initialCapacity)
+    }
+
+    fun allocateNames(initialCapacity: Long, vararg names: String) {
+        names.forEach {
+            allocate(it, initialCapacity)
+        }
+    }
+
+    fun write(name: String, block: Buffer.() -> Unit) {
+        val buffer = this[name]
+        block(buffer)
     }
 
     fun applyBindings() {
         bindings.forEach { (id, buffer) ->
             if (appliedBindings[id] == buffer) return@forEach
-            glBindBufferBase(GL_SHADER_STORAGE_BUFFER, id, buffer.id)
+            GL30C.glBindBufferBase(GL43C.GL_SHADER_STORAGE_BUFFER, id, buffer.id)
             appliedBindings[id] = buffer
         }
     }

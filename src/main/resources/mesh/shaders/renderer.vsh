@@ -4,6 +4,8 @@
 #define RECT_BUFFER_INDEX 0
 #define CHAR_BUFFER_INDEX 1
 
+uniform float u_NORMALIZED_FONT_BASELINE;
+
 out float s_DRAW_BUFFER_INDEX;
 out float s_TEXTURE_INDEX;
 
@@ -11,7 +13,6 @@ out vec2 s_INSTANCE_UV;
 out vec2 s_SAMPLER_UV;
 
 out vec4 s_VERTEX_COLOR;
-
 
 struct RectInstance {
     vec2 pos1; // 8
@@ -39,7 +40,6 @@ struct Glyph {
     vec2 uv1; // 8
     vec2 uv2; // 16
 };
-
 
 layout (std430) readonly buffer MatrixBuffer {
     mat4 matrices[];
@@ -114,10 +114,9 @@ void _CHAR(CharInstance charInstance, vec2 uv01) {
     vec2 uvSize = glyphInfo.uv2 - glyphInfo.uv1;
     float aspectRatio = uvSize.x / uvSize.y;
     float charWidth = stringInstance.height * aspectRatio;
-    float heightOffset = stringInstance.height * 0.5;
 
-    vec2 pos1 = charInstance.position - vec2(0.0, heightOffset);
-    vec2 pos2 = charInstance.position + vec2(charWidth, heightOffset);
+    vec2 pos1 = charInstance.position - vec2(0.0, stringInstance.height * u_NORMALIZED_FONT_BASELINE);
+    vec2 pos2 = charInstance.position + vec2(charWidth, stringInstance.height * (1.0 - u_NORMALIZED_FONT_BASELINE));
 
     vec4 charPosition = vec4(mix(pos1, pos2, uv01), 0.0, 1.0);
 

@@ -1,11 +1,11 @@
 package me.blade.meshkt.renderer.font
 
-import me.blade.meshkt.MeshRenderer.glyphMap
 import java.awt.Color
 import java.awt.Font
 import java.awt.FontMetrics
 import java.awt.image.BufferedImage
 import kotlin.collections.forEach
+import kotlin.math.abs
 
 private const val FONT_SIZE = 512f
 
@@ -26,6 +26,7 @@ private val supportedCharacters = buildString {
 
 data class GlyphMap(
     val image: BufferedImage,
+    val normalizedTopline: Double,
     val normalizedBaseline: Double,
     val charData: Map<Char, GlyphData>
 ) {
@@ -87,8 +88,13 @@ fun buildGlyphMap(fontIn: Font): GlyphMap {
 
     graphics.dispose()
 
-    val baseline = metrics.ascent.toDouble() / metrics.height
-    return GlyphMap(image, baseline, charMap)
+    val ascent = abs(metrics.ascent.toDouble()) / metrics.height
+    val descend = abs(metrics.descent.toDouble()) / metrics.height
+
+    val topline = 0.0
+    val baseline = ascent
+
+    return GlyphMap(image, topline, baseline, charMap)
 }
 
 private fun getRenderPositions(chars: List<BufferedImage>, rowHeight: Int, minSize: Int = 128): Pair<ArrayList<Pair<Int, Int>>, Int> {
@@ -130,12 +136,13 @@ private fun getCharacterImage(metrics: FontMetrics, char: Char): Pair<BufferedIm
     val width = metrics.charWidth(char)
     if (width <= 0 || !metrics.font.canDisplay(char)) return null
 
-    val image = BufferedImage(width, metrics.height, BufferedImage.TYPE_BYTE_GRAY)
+    val image = BufferedImage(width, metrics.height - metrics.leading, BufferedImage.TYPE_BYTE_GRAY)
     val graphics = image.createGraphics()
 
     graphics.font = metrics.font
     graphics.color = Color.WHITE
-    graphics.drawString(char.toString(), 0, metrics.ascent)
+
+    graphics.drawString(char.toString(), 0, metrics.ascent - metrics.leading)
 
     graphics.dispose()
     return image to char

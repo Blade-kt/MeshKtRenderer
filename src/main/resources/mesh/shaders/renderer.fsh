@@ -3,6 +3,9 @@
 #define RECT_BUFFER_INDEX 0
 #define CHAR_BUFFER_INDEX 1
 
+uniform float u_NORMALIZED_FONT_TOPLINE;
+uniform float u_NORMALIZED_FONT_BASELINE;
+
 uniform sampler2D TEXTURE_SAMPLER0;
 uniform sampler2D TEXTURE_SAMPLER1;
 uniform sampler2D TEXTURE_SAMPLER2;
@@ -63,7 +66,15 @@ void main() {
     if (BUFFER_INDEX == CHAR_BUFFER_INDEX) {
         float smoothness = fwidth(textureColor.r) * 0.5;
         float sdf = smoothstep(0.5 - smoothness, 0.5 + smoothness, textureColor.r);
-        COLOR_ATTACHMENT0 = s_VERTEX_COLOR * vec4(sdf, sdf, sdf, 1.0);
+        vec4 fontColor = mix(vec4(1.0, 0.3, 0.3, 1.0), vec4(1.0), sdf);
+        if (s_INSTANCE_UV.y < u_NORMALIZED_FONT_TOPLINE) {
+            fontColor *= vec4(0.5, 0.5, 0.5, 1.0);
+        }
+
+        if (s_INSTANCE_UV.y > u_NORMALIZED_FONT_BASELINE) {
+            fontColor *= vec4(0.5, 0.5, 0.5, 1.0);
+        }
+        COLOR_ATTACHMENT0 = s_VERTEX_COLOR * fontColor;
         return;
     }
 }
