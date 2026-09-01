@@ -7,8 +7,8 @@ import me.blade.meshkt.renderer.objects.texture.Texture
 import me.blade.meshkt.renderer.util.MeshDslObj3ct
 
 @MeshDslObj3ct
-fun createBuffer(initialCapacity: Long = 1024, block: Buffer.() -> Unit = {}) =
-    Buffer(initialCapacity).apply(block)
+fun createBuffer(initialCapacity: Long = 1024, fixed: Boolean = false, block: Buffer.() -> Unit = {}) =
+    Buffer(initialCapacity, fixed).apply(block)
 
 @MeshDslObj3ct
 fun createFramebuffer(block: Framebuffer.() -> Unit = {}) =

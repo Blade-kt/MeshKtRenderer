@@ -33,6 +33,7 @@ dependencies {
     implementation("org.joml:joml:1.10.7")
 
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:$kotlinCoroutinesVersion")
+    implementation(kotlin("reflect"))
 }
 
 kotlin {

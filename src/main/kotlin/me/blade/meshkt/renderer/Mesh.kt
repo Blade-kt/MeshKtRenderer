@@ -9,7 +9,7 @@ import me.blade.meshkt.renderer.util.ObservableMap.Companion.observableMap
 import org.lwjgl.opengl.GL45C.*
 
 object Mesh {
-    private val vao by lazy(::glGenVertexArrays)
+    private val vao by lazy(::glCreateVertexArrays)
 
     private var prevTextureSlot = TextureSlot.Slot0.textureSlot
     private val prevBoundTextures = observableMap<TextureSlot, Int>()
@@ -59,6 +59,14 @@ object Mesh {
 
         glActiveTexture(prevTextureSlot)
         glBindVertexArray(prevVertexArrayObject)
+    }
+
+    fun dispatchCompute(numGroupsX: Int, numGroupsY: Int, numGroupsZ: Int = 1) {
+        glDispatchCompute(numGroupsX, numGroupsY, numGroupsZ)
+    }
+
+    fun memoryBarrier(barrierBitMask: Int) {
+        glMemoryBarrier(barrierBitMask)
     }
 
     fun render(

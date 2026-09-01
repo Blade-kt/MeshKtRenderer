@@ -4,14 +4,10 @@
 #define RECT_BUFFER_INDEX 0
 #define CHAR_BUFFER_INDEX 1
 
-uniform float u_NORMALIZED_FONT_BASELINE;
-
 out float s_DRAW_BUFFER_INDEX;
 out float s_TEXTURE_INDEX;
-
 out vec2 s_INSTANCE_UV;
 out vec2 s_SAMPLER_UV;
-
 out vec4 s_VERTEX_COLOR;
 
 struct RectInstance {
@@ -41,9 +37,17 @@ struct Glyph {
     vec2 uv2; // 16
 };
 
-layout (std430) readonly buffer MatrixBuffer {
-    mat4 matrices[];
-} matrixAccess;
+layout (std430) readonly buffer ProjectionMatrixBuffer {
+    mat4 projectionMatrices[];
+} projectionMatrixAccess;
+
+layout (std430) readonly buffer ViewMatrixBuffer {
+    mat4 viewMatrices[];
+} viewMatrixAccess;
+
+layout (std430) readonly buffer ModelMatrixBuffer {
+    mat4 modelMatrices[];
+} modelMatrixAccess;
 
 layout (std430) readonly buffer InstanceBuffer {
     int instances[];
@@ -84,11 +88,12 @@ ivec2 unpackInstanceData(int packedData) {
 
 void setVertexPosition(int packedMatrices, vec4 rawPosition) {
     int projectionMatrixIndex = (packedMatrices >> 28) & 0x0000000F;  //  4 bits
-    int viewMatrixIndex       = (packedMatrices >> 8 ) & 0x00FFFFFF;  // 20 bits
+    int viewMatrixIndex       = (packedMatrices >> 8 ) & 0x000FFFFF;  // 20 bits
     int modelMatrixIndex      = (packedMatrices      ) & 0x000000FF;  //  8 bits
-    mat4 projectionMatrix = matrixAccess.matrices[projectionMatrixIndex];
-    mat4 viewMatrix = matrixAccess.matrices[viewMatrixIndex];
-    mat4 modelMatrix = matrixAccess.matrices[modelMatrixIndex];
+
+    mat4 projectionMatrix = projectionMatrixAccess.projectionMatrices[projectionMatrixIndex];
+    mat4 viewMatrix = viewMatrixAccess.viewMatrices[viewMatrixIndex];
+    mat4 modelMatrix = modelMatrixAccess.modelMatrices[modelMatrixIndex];
 
     gl_Position = projectionMatrix * viewMatrix * modelMatrix * rawPosition;
 }
@@ -115,8 +120,9 @@ void _CHAR(CharInstance charInstance, vec2 uv01) {
     float aspectRatio = uvSize.x / uvSize.y;
     float charWidth = stringInstance.height * aspectRatio;
 
-    vec2 pos1 = charInstance.position - vec2(0.0, stringInstance.height * u_NORMALIZED_FONT_BASELINE);
-    vec2 pos2 = charInstance.position + vec2(charWidth, stringInstance.height * (1.0 - u_NORMALIZED_FONT_BASELINE));
+    vec2 pos = charInstance.position;
+    vec2 pos1 = pos - vec2(0.0, stringInstance.height);
+    vec2 pos2 = pos + vec2(charWidth, 0.0);
 
     vec4 charPosition = vec4(mix(pos1, pos2, uv01), 0.0, 1.0);
 

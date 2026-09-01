@@ -5,7 +5,6 @@ import java.awt.Font
 import java.awt.FontMetrics
 import java.awt.image.BufferedImage
 import kotlin.collections.forEach
-import kotlin.math.abs
 
 private const val FONT_SIZE = 512f
 
@@ -26,14 +25,11 @@ private val supportedCharacters = buildString {
 
 data class GlyphMap(
     val image: BufferedImage,
-    val normalizedBaseline: Double,
+    val normalizedCenter: Double,
     val charData: Map<Char, GlyphData>
 ) {
-    val charIndexMap = hashMapOf<Char, Int>().also { map ->
-        charData.keys.forEachIndexed { index, char ->
-            map[char] = index
-        }
-    }
+    fun charDataOf(char: Char) =
+        charData[char] ?: charData['?']!!
 }
 
 data class GlyphData(
@@ -41,6 +37,7 @@ data class GlyphData(
     var v0: Double,
     var u1: Double,
     var v1: Double,
+    var index: Int = 0 // lateinit
 ) {
     fun getCharWidth(height: Double): Double {
         val aspectRatio = (u1 - u0) / (v1 - v0)
@@ -58,9 +55,10 @@ fun buildGlyphMap(fontIn: Font): GlyphMap {
 
     val chars = charPairs.map { it.second }
     val images = charPairs.map { it.first }
+    val height = images.maxOf { it.height }
 
     val charMap = hashMapOf<Char, GlyphData>()
-    val renderPos = getRenderPositions(images, metrics.height)
+    val renderPos = getRenderPositions(images, height)
     val image = BufferedImage(renderPos.second, renderPos.second, BufferedImage.TYPE_BYTE_GRAY)
     val graphics = image.createGraphics()
 
@@ -87,8 +85,8 @@ fun buildGlyphMap(fontIn: Font): GlyphMap {
 
     graphics.dispose()
 
-    val baseline = abs(metrics.ascent.toDouble()) / metrics.height
-    return GlyphMap(image,baseline, charMap)
+    val center = (metrics.ascent + metrics.descent) * 0.5 / metrics.height
+    return GlyphMap(image,center, charMap)
 }
 
 private fun getRenderPositions(chars: List<BufferedImage>, rowHeight: Int, minSize: Int = 128): Pair<ArrayList<Pair<Int, Int>>, Int> {

@@ -1,12 +1,16 @@
 package me.blade.meshkt.renderer.objects.shader.groups
 
 import me.blade.meshkt.renderer.objects.shader.Shader
+import me.blade.meshkt.renderer.objects.texture.properties.TextureSlot
 import org.joml.Matrix4f
 import org.lwjgl.opengl.GL20C.*
-import java.nio.FloatBuffer
 
 class UniformWriter(private val shader: Shader) {
     private val uniformCache = mutableMapOf<String, Int>()
+
+    fun sampler(name: String, value: TextureSlot) {
+        glUniform1i(getUniformLocation(name), value.unitIndex)
+    }
 
     fun int(name: String, value: Int) {
         glUniform1i(getUniformLocation(name), value)

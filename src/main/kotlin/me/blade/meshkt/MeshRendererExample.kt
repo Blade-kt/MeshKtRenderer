@@ -1,22 +1,39 @@
 package me.blade.meshkt
 
 import me.blade.meshkt.renderer.Mesh
+import me.blade.meshkt.renderer.engine.MatrixType
+import me.blade.meshkt.renderer.engine.MeshRenderer
+import org.joml.Matrix4f
 import org.lwjgl.glfw.GLFW.*
 import org.lwjgl.opengl.GL
 import org.lwjgl.opengl.GL11C.*
 import org.lwjgl.system.MemoryStack
-import java.awt.Font
-import java.io.File
+import java.awt.Color
 import java.nio.IntBuffer
-import javax.imageio.ImageIO
+import kotlin.properties.Delegates
 
 object MeshRendererExample {
     var viewportWidth = 1
     var viewportHeight = 1
+    var window by Delegates.notNull<Long>()
 
     @JvmStatic
     fun main(args: Array<String>) {
         mainEntry()
+    }
+
+    fun frame() {
+        Mesh.setupState()
+        MeshRenderer.apply {
+            bindMatrix(MatrixType.Projection, Matrix4f().ortho(0f, viewportWidth.toFloat(), viewportHeight.toFloat(), 0f, -1f, 1f))
+
+            val string = "SomeAshitty_string@ё"
+            putRect(30.0, 300.0 - 100.0, 30.0 + stringWidth(string, 100.0), 300.0, Color.DARK_GRAY)
+            putString(string, 30.0, 300.0, 100.0)
+        }
+        MeshRenderer.flush()
+        MeshRenderer.fence()
+        Mesh.revertState()
     }
 
     private fun mainEntry() {
@@ -26,7 +43,7 @@ object MeshRendererExample {
         glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6)
         glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GLFW_FALSE)
         glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE)
-        val window = glfwCreateWindow(1024, 768, "MeshRenderer Demo", 0L, 0L)
+        window = glfwCreateWindow(1024, 768, "MeshRenderer Demo", 0L, 0L)
 
         glfwMakeContextCurrent(window)
         val caps = GL.createCapabilities()
@@ -59,9 +76,7 @@ object MeshRendererExample {
 
             glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT)
 
-            Mesh.setupState()
-            MeshRenderer.frame()
-            Mesh.revertState()
+            frame()
 
             glfwSwapBuffers(window)
             glfwPollEvents()

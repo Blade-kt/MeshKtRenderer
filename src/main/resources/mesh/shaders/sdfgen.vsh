@@ -1,7 +1,6 @@
 #version 460 core
 
 uniform mat4 u_MATRIX;
-uniform vec2 u_SRC_SIZE;
 uniform vec2 u_DST_SIZE;
 
 out vec2 s_UV;

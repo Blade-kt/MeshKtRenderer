@@ -10,7 +10,7 @@ import org.lwjgl.opengl.GL45C.nglNamedBufferSubData
 import org.lwjgl.system.MemoryUtil.*
 import kotlin.math.max
 
-class Buffer(initialCapacity: Long) : ObjectHandle(glCreateBuffers(), false) {
+class Buffer(initialCapacity: Long, private val fixed: Boolean) : ObjectHandle(glCreateBuffers(), false) {
     var pointer = NULL
     var capacity = 0L
 
@@ -145,6 +145,9 @@ class Buffer(initialCapacity: Long) : ObjectHandle(glCreateBuffers(), false) {
     private inline fun write(bytes: Long, block: () -> Unit) {
         val shouldGrow = (offset + bytes) > capacity
         if (shouldGrow) {
+            check (!fixed) {
+                "Buffer overflow: Cannot add more elements. The buffer has a fixed capacity and cannot be resized."
+            }
             allocate(capacity + max(capacity, bytes))
         }
         block()

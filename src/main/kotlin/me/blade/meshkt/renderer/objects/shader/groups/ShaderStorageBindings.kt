@@ -3,10 +3,11 @@ package me.blade.meshkt.renderer.objects.shader.groups
 import me.blade.meshkt.renderer.objects.buffer.Buffer
 import me.blade.meshkt.renderer.objects.createBuffer
 import me.blade.meshkt.renderer.objects.shader.Shader
+import me.blade.meshkt.renderer.resource.IMeshResource
 import org.lwjgl.opengl.GL30C
 import org.lwjgl.opengl.GL43C
 
-class ShaderStorageBindings(private val shader: Shader) {
+class ShaderStorageBindings(private val shader: Shader) : IMeshResource {
     private val appliedBindings = hashMapOf<Int, Buffer>()
     private val bindings = hashMapOf<Int, Buffer>()
 
@@ -23,15 +24,16 @@ class ShaderStorageBindings(private val shader: Shader) {
         ssboIndex
     }
 
-    fun allocate(name: String, initialCapacity: Long = 1024, block: Buffer.() -> Unit = {}) {
-        val buffer = createBuffer(initialCapacity)
+    fun allocate(name: String, initialCapacity: Long = 1024, fixed: Boolean = false, block: Buffer.() -> Unit = {}): Buffer {
+        val buffer = createBuffer(initialCapacity, fixed)
         this[name] = buffer
         buffer.block()
+        return buffer
     }
 
-    fun allocateNames(initialCapacity: Long, vararg names: String) {
+    fun allocateNames(initialCapacity: Long, fixed: Boolean, vararg names: String) {
         names.forEach {
-            allocate(it, initialCapacity)
+            allocate(it, initialCapacity, fixed)
         }
     }
 
@@ -45,6 +47,12 @@ class ShaderStorageBindings(private val shader: Shader) {
             if (appliedBindings[id] == buffer) return@forEach
             GL30C.glBindBufferBase(GL43C.GL_SHADER_STORAGE_BUFFER, id, buffer.id)
             appliedBindings[id] = buffer
+        }
+    }
+
+    override fun free() {
+        bindings.values.forEach {
+            it.free()
         }
     }
 }
