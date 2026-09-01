@@ -3,7 +3,7 @@ package me.blade.meshkt.renderer.threading
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Job
-import me.blade.meshkt.renderer.resource.IMeshResource
+import me.blade.meshkt.renderer.util.IMeshResource
 import org.lwjgl.glfw.GLFW
 import java.util.logging.Logger
 

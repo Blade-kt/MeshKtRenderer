@@ -1,8 +1,12 @@
 package me.blade.meshkt.renderer.engine
 
 import me.blade.meshkt.renderer.Mesh
-import me.blade.meshkt.renderer.font.buildGlyphMap
-import me.blade.meshkt.renderer.font.sdf
+import me.blade.meshkt.renderer.engine.descriptors.FontDescriptor
+import me.blade.meshkt.renderer.engine.descriptors.IRectDescriptor
+import me.blade.meshkt.renderer.engine.descriptors.IFontDescriptor
+import me.blade.meshkt.renderer.engine.descriptors.RectDescriptor
+import me.blade.meshkt.renderer.engine.font.buildGlyphMap
+import me.blade.meshkt.renderer.engine.font.sdf
 import me.blade.meshkt.renderer.objects.createShader
 import me.blade.meshkt.renderer.objects.shader.properties.ShaderType
 import me.blade.meshkt.renderer.objects.texture.properties.TextureSlot
@@ -11,11 +15,9 @@ import me.blade.meshkt.renderer.util.packVec2
 import me.blade.meshkt.renderer.util.packVec3
 import me.blade.meshkt.renderer.util.resourceText
 import org.joml.Matrix4f
-import org.lwjgl.opengl.GL11C.*
-import java.awt.Color
 import java.awt.Font
 
-object MeshRenderer {
+object MeshRenderer : IRenderContext {
     private val glyphMap = buildGlyphMap(
         Font("Arial", Font.PLAIN, 128)
     )
@@ -48,13 +50,16 @@ object MeshRenderer {
     private const val INSTANCE_BUFFER_BITS = 4
     private const val INSTANCE_POINTER_BITS = 28
     private val instanceBuffer = storage.allocate("InstanceBuffer")
+    private val textureHandleBuffer = storage.allocate("TextureHandleBuffer")
 
     /* Rect */
+    private val rectDescriptor = RectDescriptor()
     private const val RECT_BUFFER_INDEX = 0
     private var rectInstanceCount = 0
     private val rectInstanceBuffer = storage.allocate("RectInstanceBuffer")
 
     /* Font */
+    private val fontDescriptor = FontDescriptor()
     private const val CHAR_BUFFER_INDEX = 1
     private var stringInstanceCount = 0
     private var charInstanceCount = 0
@@ -74,7 +79,7 @@ object MeshRenderer {
         modelMatrixAllocator.bound,
     )
 
-    fun bindMatrix(type: MatrixType, matrix: Matrix4f) {
+    override fun bindMatrix(type: MatrixType, matrix: Matrix4f) {
         when (type) {
             MatrixType.Projection -> projectionMatrixAllocator
             MatrixType.View -> viewMatrixAllocator
@@ -82,15 +87,17 @@ object MeshRenderer {
         }.bind(matrix)
     }
 
-    fun putRect(
-        pos1x: Double, pos1y: Double,
-        pos2x: Double, pos2y: Double,
-        color: Color
-    ) {
+    override fun rect(block: IRectDescriptor.() -> Unit) {
+        rectDescriptor.reset()
+        block(rectDescriptor)
+        rect(rectDescriptor)
+    }
+
+    override fun rect(descriptor: IRectDescriptor) {
         with(rectInstanceBuffer) {
-            vec2(pos1x, pos1y)
-            vec2(pos2x, pos2y)
-            int(packColorARGB(color))
+            vec2(descriptor.pos1)
+            vec2(descriptor.pos2)
+            int(packColorARGB(descriptor.color))
             int(packedMatrices)
             int(0) // tex index
             skip(4)
@@ -106,19 +113,21 @@ object MeshRenderer {
         }
     }
 
-    fun putString(
-        string: String,
-        posX: Double, posY: Double, height: Double
-    ) {
-        // create string instance
+    override fun font(block: IFontDescriptor.() -> Unit) {
+        fontDescriptor.reset()
+        block(fontDescriptor)
+        font(fontDescriptor)
+    }
+
+    override fun font(descriptor: IFontDescriptor) {
         val stringIndex = stringInstanceCount++
         with(stringInstanceBuffer) {
             int(packedMatrices)
-            float(height)
+            float(descriptor.height)
         }
 
         var xOffset = 0.0
-        string.forEach { char ->
+        descriptor.text.forEach { char ->
             val glyph = glyphMap.charDataOf(char)
 
             with(instanceBuffer) {
@@ -131,16 +140,20 @@ object MeshRenderer {
             }
 
             with(charInstanceBuffer) {
-                vec2(posX + xOffset, posY)
+                vec2(descriptor.pos.x + xOffset, descriptor.pos.y)
                 int(stringIndex)
                 int(glyph.index)
-                xOffset += glyph.getCharWidth(height)
+                xOffset += glyph.getCharWidth(descriptor.height)
             }
         }
     }
 
-    fun stringWidth(string: String, height: Double) = string.sumOf {
+    override fun fontWidth(string: String, height: Double) = string.sumOf {
         glyphMap.charDataOf(it).getCharWidth(height)
+    }
+
+    fun use(block: IRenderContext.() -> Unit) {
+        block(this)
     }
 
     fun flush() {
@@ -153,12 +166,13 @@ object MeshRenderer {
         stringInstanceBuffer.upload()
         charInstanceBuffer.upload()
 
-        Mesh.boundTexture[TextureSlot.Slot0] = sdfTexture
+        textureHandleBuffer.apply {
+            reset()
+            long(sdfTexture.bindlessHandle)
+            upload()
+        }
+
         Mesh.boundShader = shader
-
-        glEnable(GL_BLEND)
-        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
-
         Mesh.render(shader, rectInstanceCount + charInstanceCount)
 
         instanceBuffer.reset()

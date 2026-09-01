@@ -1,6 +1,5 @@
-package me.blade.meshkt.renderer.font
+package me.blade.meshkt.renderer.engine.font
 
-import me.blade.meshkt.MeshRendererExample
 import me.blade.meshkt.renderer.Mesh
 import me.blade.meshkt.renderer.objects.createBuffer
 import me.blade.meshkt.renderer.objects.createFramebuffer
@@ -13,7 +12,6 @@ import me.blade.meshkt.renderer.objects.texture.properties.*
 import me.blade.meshkt.renderer.util.rent
 import me.blade.meshkt.renderer.util.resourceText
 import org.joml.Matrix4f
-import org.lwjgl.glfw.GLFW.glfwSwapBuffers
 import org.lwjgl.opengl.GL11C.*
 import java.awt.image.BufferedImage
 

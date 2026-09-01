@@ -1,6 +1,6 @@
 package me.blade.meshkt.renderer.objects
 
-import me.blade.meshkt.renderer.resource.IMeshResource
+import me.blade.meshkt.renderer.util.IMeshResource
 
 abstract class ObjectHandle(
     private val identifier: Int,

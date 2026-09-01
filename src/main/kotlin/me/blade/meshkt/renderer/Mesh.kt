@@ -4,8 +4,9 @@ import me.blade.meshkt.renderer.objects.framebuffer.Framebuffer
 import me.blade.meshkt.renderer.objects.shader.Shader
 import me.blade.meshkt.renderer.objects.texture.Texture
 import me.blade.meshkt.renderer.objects.texture.properties.TextureSlot
-import me.blade.meshkt.renderer.resource.TrackedState
+import me.blade.meshkt.renderer.state.TrackedState
 import me.blade.meshkt.renderer.util.ObservableMap.Companion.observableMap
+import me.blade.meshkt.renderer.util.Quad
 import org.lwjgl.opengl.GL45C.*
 
 object Mesh {
@@ -15,19 +16,35 @@ object Mesh {
     private val prevBoundTextures = observableMap<TextureSlot, Int>()
     private var prevVertexArrayObject = 0
 
-    private val readFramebufferState = TrackedState.create<Framebuffer>(GL_READ_FRAMEBUFFER_BINDING) {
-        glBindFramebuffer(GL_READ_FRAMEBUFFER, it)
-    }
+    private val readFramebufferState = TrackedState.create(
+        originalGetter = { glGetInteger(GL_READ_FRAMEBUFFER_BINDING) },
+        stateApplier = { glBindFramebuffer(GL_READ_FRAMEBUFFER, it) },
+        mapToNative = { it?.id ?: 0 },
+        mapToImpl = { null as Framebuffer? }
+    )
 
-    private val writeFramebufferState = TrackedState.create<Framebuffer>(GL_DRAW_FRAMEBUFFER_BINDING) {
-        glBindFramebuffer(GL_DRAW_FRAMEBUFFER, it)
-    }
+    private val writeFramebufferState = TrackedState.create(
+        originalGetter = { glGetInteger(GL_DRAW_FRAMEBUFFER_BINDING) },
+        stateApplier = { glBindFramebuffer(GL_DRAW_FRAMEBUFFER, it) },
+        mapToNative = { it?.id ?: 0 },
+        mapToImpl = { null as Framebuffer? }
+    )
 
-    private val boundShaderState = TrackedState.create<Shader>(GL_CURRENT_PROGRAM) {
-        glUseProgram(it)
-    }
+    private val boundShaderState = TrackedState.create(
+        originalGetter = { glGetInteger(GL_CURRENT_PROGRAM) },
+        stateApplier = { glUseProgram(it) },
+        mapToNative = { it?.id ?: 0 },
+        mapToImpl = { null as Shader? },
+    )
 
-    private val stateTrackers = listOf(readFramebufferState, writeFramebufferState, boundShaderState)
+    private val viewportState = TrackedState.create(
+        originalGetter = { IntArray(4).also { glGetIntegerv(GL_VIEWPORT, it) }.let { Quad(it[0], it[1], it[2], it[3]) } },
+        stateApplier = { glViewport(it.first, it.second, it.third, it.fourth) },
+        mapToNative = { it },
+        mapToImpl = { it },
+    )
+
+    private val stateTrackers = listOf(readFramebufferState, writeFramebufferState, boundShaderState, viewportState)
 
     var readFramebuffer by readFramebufferState
     var writeFramebuffer by writeFramebufferState
@@ -36,8 +53,8 @@ object Mesh {
         glBindTextureUnit(slot.unitIndex, texture?.id ?: 0)
     }
 
-    fun setupState() {
-        stateTrackers.forEach(TrackedState<*>::begin)
+    fun begin() {
+        stateTrackers.forEach(TrackedState<*, *>::begin)
         prevTextureSlot = glGetInteger(GL_ACTIVE_TEXTURE)
         prevVertexArrayObject = glGetInteger(GL_VERTEX_ARRAY_BINDING)
 
@@ -49,8 +66,8 @@ object Mesh {
         glBindVertexArray(vao)
     }
 
-    fun revertState() {
-        stateTrackers.forEach(TrackedState<*>::end)
+    fun end() {
+        stateTrackers.forEach(TrackedState<*, *>::end)
 
         prevBoundTextures.entries.forEach { (slot, id) ->
             glActiveTexture(slot.textureSlot)

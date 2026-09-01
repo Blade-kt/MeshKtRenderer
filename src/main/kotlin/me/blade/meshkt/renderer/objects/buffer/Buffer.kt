@@ -1,6 +1,12 @@
 package me.blade.meshkt.renderer.objects.buffer
 
 import me.blade.meshkt.renderer.objects.ObjectHandle
+import me.blade.meshkt.renderer.util.Vec2
+import me.blade.meshkt.renderer.util.Vec2i
+import me.blade.meshkt.renderer.util.Vec3
+import me.blade.meshkt.renderer.util.Vec3i
+import me.blade.meshkt.renderer.util.Vec4
+import me.blade.meshkt.renderer.util.Vec4i
 import org.joml.Matrix4f
 import org.lwjgl.opengl.GL15C.GL_DYNAMIC_DRAW
 import org.lwjgl.opengl.GL15C.glDeleteBuffers
@@ -74,6 +80,11 @@ class Buffer(initialCapacity: Long, private val fixed: Boolean) : ObjectHandle(g
         memPutInt(cursor + 4, y)
     }
 
+    fun ivec2(vec: Vec2i) = write(8) {
+        memPutInt(cursor, vec.x)
+        memPutInt(cursor + 4, vec.y)
+    }
+
     fun vec2(x: Float, y: Float) = write(8) {
         memPutFloat(cursor, x)
         memPutFloat(cursor + 4, y)
@@ -84,10 +95,21 @@ class Buffer(initialCapacity: Long, private val fixed: Boolean) : ObjectHandle(g
         memPutFloat(cursor + 4, y.toFloat())
     }
 
+    fun vec2(vec: Vec2) = write(8) {
+        memPutFloat(cursor, vec.x.toFloat())
+        memPutFloat(cursor + 4, vec.y.toFloat())
+    }
+
     fun ivec3(x: Int, y: Int, z: Int) = write(12) {
         memPutInt(cursor, x)
         memPutInt(cursor + 4, y)
         memPutInt(cursor + 8, z)
+    }
+
+    fun ivec3(vec: Vec3i) = write(12) {
+        memPutInt(cursor, vec.x)
+        memPutInt(cursor + 4, vec.y)
+        memPutInt(cursor + 8, vec.z)
     }
 
     fun vec3(x: Float, y: Float, z: Float) = write(12) {
@@ -102,11 +124,24 @@ class Buffer(initialCapacity: Long, private val fixed: Boolean) : ObjectHandle(g
         memPutFloat(cursor + 8, z.toFloat())
     }
 
+    fun vec3(vec: Vec3) = write(12) {
+        memPutFloat(cursor, vec.x.toFloat())
+        memPutFloat(cursor + 4, vec.y.toFloat())
+        memPutFloat(cursor + 8, vec.z.toFloat())
+    }
+
     fun ivec4(x: Int, y: Int, z: Int, w: Int) = write(16) {
         memPutInt(cursor, x)
         memPutInt(cursor + 4, y)
         memPutInt(cursor + 8, z)
         memPutInt(cursor + 12, w)
+    }
+
+    fun ivec4(vec: Vec4i) = write(16) {
+        memPutInt(cursor, vec.x)
+        memPutInt(cursor + 4, vec.y)
+        memPutInt(cursor + 8, vec.z)
+        memPutInt(cursor + 12, vec.w)
     }
 
     fun vec4(x: Float, y: Float, z: Float, w: Float) = write(16) {
@@ -121,6 +156,13 @@ class Buffer(initialCapacity: Long, private val fixed: Boolean) : ObjectHandle(g
         memPutFloat(cursor + 4, y.toFloat())
         memPutFloat(cursor + 8, z.toFloat())
         memPutFloat(cursor + 12, w.toFloat())
+    }
+
+    fun vec4(vec: Vec4) = write(16) {
+        memPutFloat(cursor, vec.x.toFloat())
+        memPutFloat(cursor + 4, vec.y.toFloat())
+        memPutFloat(cursor + 8, vec.z.toFloat())
+        memPutFloat(cursor + 12, vec.w.toFloat())
     }
 
     fun mat4(value: Matrix4f) = write(64) {

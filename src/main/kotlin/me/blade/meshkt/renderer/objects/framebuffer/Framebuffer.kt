@@ -5,7 +5,7 @@ import me.blade.meshkt.renderer.objects.framebuffer.properties.FramebufferAttach
 import me.blade.meshkt.renderer.objects.framebuffer.properties.FramebufferStatus
 import me.blade.meshkt.renderer.objects.texture.Texture
 import me.blade.meshkt.renderer.objects.texture.properties.TextureMagFilter
-import me.blade.meshkt.renderer.resource.IMeshResource
+import me.blade.meshkt.renderer.util.IMeshResource
 import me.blade.meshkt.renderer.util.ObservableMap.Companion.observableMap
 import org.lwjgl.opengl.ARBFramebufferObject.GL_FRAMEBUFFER
 import org.lwjgl.opengl.ARBFramebufferObject.glDeleteFramebuffers

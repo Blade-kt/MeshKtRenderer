@@ -1,4 +1,4 @@
-package me.blade.meshkt.renderer.resource
+package me.blade.meshkt.renderer.util
 
 interface IMeshResource {
     fun free()

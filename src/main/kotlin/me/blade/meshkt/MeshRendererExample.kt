@@ -3,6 +3,7 @@ package me.blade.meshkt
 import me.blade.meshkt.renderer.Mesh
 import me.blade.meshkt.renderer.engine.MatrixType
 import me.blade.meshkt.renderer.engine.MeshRenderer
+import me.blade.meshkt.renderer.util.Vec2
 import org.joml.Matrix4f
 import org.lwjgl.glfw.GLFW.*
 import org.lwjgl.opengl.GL
@@ -23,17 +24,34 @@ object MeshRendererExample {
     }
 
     fun frame() {
-        Mesh.setupState()
-        MeshRenderer.apply {
-            bindMatrix(MatrixType.Projection, Matrix4f().ortho(0f, viewportWidth.toFloat(), viewportHeight.toFloat(), 0f, -1f, 1f))
+        val projectionMatrix = Matrix4f().ortho(0f, viewportWidth.toFloat(), viewportHeight.toFloat(), 0f, -1f, 1f)
+
+        Mesh.begin()
+
+        glEnable(GL_BLEND)
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
+
+        MeshRenderer.use {
+            bindMatrix(MatrixType.Projection, projectionMatrix)
 
             val string = "SomeAshitty_string@ё"
-            putRect(30.0, 300.0 - 100.0, 30.0 + stringWidth(string, 100.0), 300.0, Color.DARK_GRAY)
-            putString(string, 30.0, 300.0, 100.0)
+
+            rect {
+                pos1 = Vec2.create(10.0, 300.0)
+                pos2 = Vec2.create(10.0 + fontWidth(string, 100.0), 400.0)
+                color = Color.CYAN
+            }
+
+            font {
+                text = string
+                pos = Vec2.create(10.0, 400.0)
+                height = 100.0
+            }
         }
+
         MeshRenderer.flush()
         MeshRenderer.fence()
-        Mesh.revertState()
+        Mesh.end()
     }
 
     private fun mainEntry() {
@@ -46,8 +64,7 @@ object MeshRendererExample {
         window = glfwCreateWindow(1024, 768, "MeshRenderer Demo", 0L, 0L)
 
         glfwMakeContextCurrent(window)
-        val caps = GL.createCapabilities()
-        println("Bindless texture support: ${caps.GL_ARB_bindless_texture}")
+        GL.createCapabilities()
 
         val stack = MemoryStack.stackPush()
         val width: IntBuffer = stack.ints(0)

@@ -1,6 +1,6 @@
 package me.blade.meshkt.renderer.util
 
-import me.blade.meshkt.renderer.resource.IMeshResource
+import me.blade.meshkt.renderer.util.IMeshResource
 import kotlin.reflect.KMutableProperty
 
 inline fun <reified T: IMeshResource> invokePrivate(instance: T, methodName: String) {

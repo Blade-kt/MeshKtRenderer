@@ -3,7 +3,7 @@ package me.blade.meshkt.renderer.objects.shader.groups
 import me.blade.meshkt.renderer.objects.buffer.Buffer
 import me.blade.meshkt.renderer.objects.createBuffer
 import me.blade.meshkt.renderer.objects.shader.Shader
-import me.blade.meshkt.renderer.resource.IMeshResource
+import me.blade.meshkt.renderer.util.IMeshResource
 import org.lwjgl.opengl.GL30C
 import org.lwjgl.opengl.GL43C
 

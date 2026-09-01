@@ -1,4 +1,5 @@
 #version 460 core
+#extension GL_ARB_bindless_texture : require
 
 #define RECT_BUFFER_INDEX 0
 #define CHAR_BUFFER_INDEX 1
@@ -13,14 +14,13 @@ in vec4 s_VERTEX_COLOR;
 
 out vec4 COLOR_ATTACHMENT0;
 
-vec4 sampleTexture(vec2 uv) {
-    int textureIndex = int(s_TEXTURE_INDEX);
-    return texture(u_TEXTURE0, uv);
-}
+layout (std430) readonly buffer TextureHandleBuffer {
+    sampler2D handleArray[];
+} textureAccess;
 
 void main() {
     int BUFFER_INDEX = int(s_DRAW_BUFFER_INDEX);
-    vec4 textureColor = sampleTexture(s_SAMPLER_UV);
+    vec4 textureColor = texture(sampler2D(textureAccess.handleArray[int(s_TEXTURE_INDEX)]), s_SAMPLER_UV);
 
     if (BUFFER_INDEX == RECT_BUFFER_INDEX) {
         COLOR_ATTACHMENT0 = s_VERTEX_COLOR;

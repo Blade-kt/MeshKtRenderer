@@ -1,4 +1,4 @@
-package me.blade.meshkt.renderer.font
+package me.blade.meshkt.renderer.engine.font
 
 import java.awt.Color
 import java.awt.Font
