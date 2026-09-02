@@ -1,6 +1,6 @@
 package me.blade.meshkt.renderer.engine.descriptors
 
-import me.blade.meshkt.renderer.util.Vec2
+import me.blade.meshkt.renderer.util.vec.Vec2
 
 interface IFontDescriptor {
     var pos: Vec2

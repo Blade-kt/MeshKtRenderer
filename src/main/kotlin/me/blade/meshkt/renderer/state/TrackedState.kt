@@ -1,5 +1,6 @@
 package me.blade.meshkt.renderer.state
 
+import org.lwjgl.opengl.GL11C.*
 import kotlin.properties.Delegates
 import kotlin.reflect.KProperty
 
@@ -11,12 +12,12 @@ class TrackedState <NativeType: Any, ImplType> (
 ) {
     private var cachedValue by Delegates.notNull<NativeType>()
     private var actualValue by Delegates.notNull<NativeType>()
-    private var value: ImplType = mapToImpl(originalGetter())
+    var value: ImplType = mapToImpl(originalGetter()); private set
 
     operator fun getValue(obj: Any, property: KProperty<*>) = value
-    operator fun setValue(obj: Any, property: KProperty<*>, newValue0: ImplType) = setValue(newValue0)
+    operator fun setValue(obj: Any, property: KProperty<*>, newValue0: ImplType) = apply(newValue0)
 
-    private fun setValue(newValue: ImplType) {
+    fun apply(newValue: ImplType) {
         value = newValue
         bind(mapToNative(newValue))
     }
@@ -38,11 +39,51 @@ class TrackedState <NativeType: Any, ImplType> (
     }
 
     companion object {
+        fun <T: Any> create(
+            originalGetter: () -> T,
+            stateApplier: (T) -> Unit,
+        ) = TrackedState(originalGetter, stateApplier,  { it }, { it })
+
         fun <S: Any, T> create(
             originalGetter: () -> S,
             stateApplier: (S) -> Unit,
             mapToNative: (T) -> S,
             mapToImpl: (S) -> T,
         ) = TrackedState(originalGetter, stateApplier, mapToNative, mapToImpl)
+
+        fun createToggleStateBoolean(
+            key: Int
+        ) = createBoolean(
+            { glIsEnabled(key) },
+            { if (it) glEnable(key) else glDisable(key) },
+        )
+
+        fun createParameterStateBoolean(
+            key: Int,
+            setter: (Boolean) -> Unit
+        ) = createBoolean(
+            { glGetBoolean(key) },
+            { setter(it) },
+        )
+
+        fun createBoolean(
+            getter: () -> Boolean,
+            setter: (Boolean) -> Unit
+        ) = create(
+            { getter() },
+            { setter(it) },
+            { it },
+            { it }
+        )
+
+        inline fun <reified E> createEnum(
+            key: Int,
+            crossinline setter: (Int) -> Unit,
+        ) where E : Enum<E>, E : GLInt = create<Int, E>(
+            { glGetInteger(key) },
+            { setter(it) },
+            { it.gl },
+            { native -> E::class.java.enumConstants.first { it.gl == native } }
+        )
     }
 }

@@ -1,12 +1,12 @@
 package me.blade.meshkt.renderer.objects.buffer
 
 import me.blade.meshkt.renderer.objects.ObjectHandle
-import me.blade.meshkt.renderer.util.Vec2
-import me.blade.meshkt.renderer.util.Vec2i
-import me.blade.meshkt.renderer.util.Vec3
-import me.blade.meshkt.renderer.util.Vec3i
-import me.blade.meshkt.renderer.util.Vec4
-import me.blade.meshkt.renderer.util.Vec4i
+import me.blade.meshkt.renderer.util.vec.Vec2
+import me.blade.meshkt.renderer.util.vec.Vec2i
+import me.blade.meshkt.renderer.util.vec.Vec3
+import me.blade.meshkt.renderer.util.vec.Vec3i
+import me.blade.meshkt.renderer.util.vec.Vec4
+import me.blade.meshkt.renderer.util.vec.Vec4i
 import org.joml.Matrix4f
 import org.lwjgl.opengl.GL15C.GL_DYNAMIC_DRAW
 import org.lwjgl.opengl.GL15C.glDeleteBuffers

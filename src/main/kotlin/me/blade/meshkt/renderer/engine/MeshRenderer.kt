@@ -173,7 +173,7 @@ object MeshRenderer : IRenderContext {
         }
 
         Mesh.boundShader = shader
-        Mesh.render(shader, rectInstanceCount + charInstanceCount)
+        Mesh.render(rectInstanceCount + charInstanceCount)
 
         instanceBuffer.reset()
 

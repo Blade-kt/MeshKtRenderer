@@ -3,7 +3,7 @@ package me.blade.meshkt
 import me.blade.meshkt.renderer.Mesh
 import me.blade.meshkt.renderer.engine.MatrixType
 import me.blade.meshkt.renderer.engine.MeshRenderer
-import me.blade.meshkt.renderer.util.Vec2
+import me.blade.meshkt.renderer.util.vec.Vec2
 import org.joml.Matrix4f
 import org.lwjgl.glfw.GLFW.*
 import org.lwjgl.opengl.GL
@@ -24,7 +24,11 @@ object MeshRendererExample {
     }
 
     fun frame() {
-        val projectionMatrix = Matrix4f().ortho(0f, viewportWidth.toFloat(), viewportHeight.toFloat(), 0f, -1f, 1f)
+        val projectionMatrix = Matrix4f().ortho(
+            0f, viewportWidth.toFloat(),
+            viewportHeight.toFloat(), 0f,
+            -1f, 1f
+        )
 
         Mesh.begin()
 

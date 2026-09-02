@@ -9,7 +9,7 @@ import org.lwjgl.opengl.GL11C.GL_LESS
 import org.lwjgl.opengl.GL11C.GL_NEVER
 import org.lwjgl.opengl.GL11C.GL_NOTEQUAL
 
-enum class Func(val gl: Int) {
+enum class Func(override val gl: Int): GLInt {
     Never(GL_NEVER),
     Less(GL_LESS),
     Equal(GL_EQUAL),

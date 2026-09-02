@@ -1,8 +1,9 @@
 package me.blade.meshkt.renderer.objects.texture.properties
 
+import me.blade.meshkt.renderer.state.GLInt
 import org.lwjgl.opengl.GL13C.*
 
-enum class TextureSlot(val textureSlot: Int) {
+enum class TextureSlot(override val gl: Int) : GLInt {
     Slot0(GL_TEXTURE0),
     Slot1(GL_TEXTURE1),
     Slot2(GL_TEXTURE2),
@@ -36,7 +37,7 @@ enum class TextureSlot(val textureSlot: Int) {
     Slot30(GL_TEXTURE30),
     Slot31(GL_TEXTURE31);
 
-    val unitIndex = textureSlot - GL_TEXTURE0
+    val unitIndex = gl - GL_TEXTURE0
 
     companion object {
         val reversedEntries = entries.reversed()
