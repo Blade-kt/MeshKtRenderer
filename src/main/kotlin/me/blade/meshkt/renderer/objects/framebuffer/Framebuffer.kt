@@ -17,7 +17,7 @@ import org.lwjgl.opengl.GL45C.glNamedFramebufferDrawBuffers
 import org.lwjgl.opengl.GL45C.glNamedFramebufferTexture
 import kotlin.properties.Delegates
 
-class Framebuffer(externalId: Int?) : ObjectHandle(
+open class Framebuffer(externalId: Int?) : ObjectHandle(
     externalId ?: glCreateFramebuffers(),
     externalId != null
 ) {
@@ -74,6 +74,13 @@ class Framebuffer(externalId: Int?) : ObjectHandle(
 
         check(status == FramebufferStatus.Complete) {
             "Framebuffer is not complete: $status"
+        }
+    }
+
+    fun freeAttachments() {
+        setOf(*attachments.entries.toTypedArray()).forEach { (attachment, texture) ->
+            attachments[attachment] = null
+            texture?.free()
         }
     }
 

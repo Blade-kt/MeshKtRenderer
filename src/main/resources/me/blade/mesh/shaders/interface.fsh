@@ -12,7 +12,8 @@ in vec2 s_INSTANCE_UV;
 in vec2 s_SAMPLER_UV;
 in vec4 s_VERTEX_COLOR;
 
-out vec4 COLOR_ATTACHMENT0;
+out layout(location = 0) vec4 COLOR_ATTACHMENT0;
+out layout(location = 1) float SDF_ATTACHMENT;
 
 layout (std430) readonly buffer TextureHandleBuffer {
     sampler2D handleArray[];

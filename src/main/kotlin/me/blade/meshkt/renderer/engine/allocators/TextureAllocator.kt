@@ -1,4 +1,4 @@
-package me.blade.meshkt.renderer.engine
+package me.blade.meshkt.renderer.engine.allocators
 
 import me.blade.meshkt.renderer.objects.buffer.Buffer
 import me.blade.meshkt.renderer.objects.texture.Texture
@@ -8,7 +8,9 @@ class TextureAllocator(val buffer: Buffer) {
     val textures = arrayListOf<Texture>()
 
     fun alloc(texture: Texture?) = texture?.let { tex ->
-        cache.getOrPut(tex.id) { // IDK if using gl id as hash key is a good idea
+        // IDK if using gl id as hash key is a good idea
+        // TODO: probably not
+        cache.getOrPut(tex.id) {
             textures.add(tex)
             textures.lastIndex
         }

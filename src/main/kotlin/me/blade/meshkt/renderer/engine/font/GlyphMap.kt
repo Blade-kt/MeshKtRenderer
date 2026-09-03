@@ -1,12 +1,14 @@
 package me.blade.meshkt.renderer.engine.font
 
+import me.blade.meshkt.renderer.objects.texture.Texture
 import java.awt.Color
 import java.awt.Font
 import java.awt.FontMetrics
 import java.awt.image.BufferedImage
 import kotlin.collections.forEach
+import kotlin.math.roundToInt
 
-private const val FONT_SIZE = 512f
+const val FONT_SIZE = 512f
 
 private val supportedCharacters = buildString {
     append(' ')
@@ -24,7 +26,7 @@ private val supportedCharacters = buildString {
 }
 
 data class GlyphMap(
-    val image: BufferedImage,
+    val texture: Texture,
     val normalizedCenter: Double,
     val charData: Map<Char, GlyphData>
 ) {
@@ -46,7 +48,10 @@ data class GlyphData(
 }
 
 fun buildGlyphMap(fontIn: Font): GlyphMap {
-    val font = fontIn.deriveFont(FONT_SIZE)
+    val font = fontIn.takeIf {
+        it.size2D == FONT_SIZE
+    } ?: fontIn.deriveFont(FONT_SIZE)
+
     val metrics = getFontMetrics(font)
 
     val charPairs = supportedCharacters.mapNotNull {
@@ -86,7 +91,8 @@ fun buildGlyphMap(fontIn: Font): GlyphMap {
     graphics.dispose()
 
     val center = (metrics.ascent + metrics.descent) * 0.5 / metrics.height
-    return GlyphMap(image,center, charMap)
+    val texture = sdf(image)
+    return GlyphMap(texture,center, charMap)
 }
 
 private fun getRenderPositions(chars: List<BufferedImage>, rowHeight: Int, minSize: Int = 128): Pair<ArrayList<Pair<Int, Int>>, Int> {
@@ -130,6 +136,8 @@ private fun getCharacterImage(metrics: FontMetrics, char: Char): Pair<BufferedIm
 
     val image = BufferedImage(width, metrics.height - metrics.leading, BufferedImage.TYPE_BYTE_GRAY)
     val graphics = image.createGraphics()
+
+    val bounds = metrics.getMaxCharBounds(graphics)
 
     graphics.font = metrics.font
     graphics.color = Color.WHITE

@@ -1,15 +1,18 @@
 package me.blade.meshkt.renderer.engine
 
 import me.blade.meshkt.renderer.Mesh
-import me.blade.meshkt.renderer.engine.descriptors.FontDescriptor
+import me.blade.meshkt.renderer.engine.allocators.FontAllocator
+import me.blade.meshkt.renderer.engine.allocators.MatrixAllocator
+import me.blade.meshkt.renderer.engine.allocators.TextureAllocator
+import me.blade.meshkt.renderer.engine.descriptors.TextDescriptor
 import me.blade.meshkt.renderer.engine.descriptors.IRectDescriptor
-import me.blade.meshkt.renderer.engine.descriptors.IFontDescriptor
+import me.blade.meshkt.renderer.engine.descriptors.ITextDescriptor
 import me.blade.meshkt.renderer.engine.descriptors.RectDescriptor
-import me.blade.meshkt.renderer.engine.font.buildGlyphMap
-import me.blade.meshkt.renderer.engine.font.sdf
+import me.blade.meshkt.renderer.objects.createFramebuffer
 import me.blade.meshkt.renderer.objects.createShader
+import me.blade.meshkt.renderer.objects.createTexture
+import me.blade.meshkt.renderer.objects.framebuffer.properties.FramebufferAttachment
 import me.blade.meshkt.renderer.objects.shader.properties.ShaderType
-import me.blade.meshkt.renderer.objects.texture.Texture
 import me.blade.meshkt.renderer.objects.texture.properties.TextureSlot
 import me.blade.meshkt.renderer.util.packColorARGB
 import me.blade.meshkt.renderer.util.packVec2
@@ -19,26 +22,10 @@ import org.joml.Matrix4f
 import java.awt.Font
 
 class MeshInterfaceRenderer : IRenderContext {
-    private val glyphMap = buildGlyphMap(
-        Font("Arial", Font.PLAIN, 128)
-    )
-
-    private val sdfTexture = sdf(glyphMap.image)
-
     private val shader = createShader {
         compileSource(ShaderType.Vertex) { resourceText("/me/blade/mesh/shaders/interface.vsh") }
         compileSource(ShaderType.Fragment) { resourceText("/me/blade/mesh/shaders/interface.fsh") }
         link()
-
-        val glyphs = glyphMap.charData.values
-        storage.allocate("GlyphBuffer", glyphs.size * 16L, true) {
-            glyphs.forEachIndexed { index, glyphData ->
-                vec2(glyphData.u0, glyphData.v0)
-                vec2(glyphData.u1, glyphData.v1)
-                glyphData.index = index
-            }
-            upload()
-        }
 
         uniforms {
             TextureSlot.entries.forEach { slot ->
@@ -46,21 +33,29 @@ class MeshInterfaceRenderer : IRenderContext {
             }
         }
     }
+
+    val framebuffer = createFramebuffer {
+
+    }
+
     private val storage = shader.storage
+
+
 
     private val instanceBuffer = storage.allocate("InstanceBuffer")
     private val textureAllocator = TextureAllocator(storage.allocate("TextureHandleBuffer"))
 
     /* Rect */
     private val rectDescriptor = RectDescriptor()
-
     private var rectInstanceCount = 0
     private val rectInstanceBuffer = storage.allocate("RectInstanceBuffer")
 
     /* Font */
-    private val fontDescriptor = FontDescriptor()
+    var defaultFont = Font("SansSerif", Font.PLAIN, 12)
+    private val textDescriptor = TextDescriptor()
     private var stringInstanceCount = 0
     private var charInstanceCount = 0
+    private val fontAllocator = FontAllocator(storage.allocate("GlyphBuffer"))
     private val stringInstanceBuffer = storage.allocate("StringInstanceBuffer")
     private val charInstanceBuffer = storage.allocate("CharInstanceBuffer")
 
@@ -84,6 +79,9 @@ class MeshInterfaceRenderer : IRenderContext {
             MatrixType.Model -> modelMatrixAllocator
         }.bind(matrix)
     }
+
+    override fun createRectDescriptor(block: IRectDescriptor.() -> Unit) =
+        RectDescriptor().apply(block)
 
     override fun rect(block: IRectDescriptor.() -> Unit) {
         rectDescriptor.reset()
@@ -111,27 +109,33 @@ class MeshInterfaceRenderer : IRenderContext {
         }
     }
 
-    override fun font(block: IFontDescriptor.() -> Unit) {
-        fontDescriptor.reset()
-        block(fontDescriptor)
-        font(fontDescriptor)
+    override fun createTextDescriptor(block: ITextDescriptor.() -> Unit) =
+        TextDescriptor().apply(block)
+
+    override fun text(block: ITextDescriptor.() -> Unit) {
+        textDescriptor.reset()
+        block(textDescriptor)
+        text(textDescriptor)
     }
 
-    override fun font(descriptor: IFontDescriptor) {
+    override fun text(descriptor: ITextDescriptor) {
+        val font = descriptor.font ?: defaultFont
+        val glyphMap = fontAllocator.alloc(font)
+
         val stringIndex = stringInstanceCount++
         with(stringInstanceBuffer) {
             int(packedMatrices)
 
-            // TODO: on-fly glyph map generator
+            // TODO: on-fly glyph map generator for unlimited character support
             // (and this actually should be per-char)
-            int(textureAllocator.alloc(sdfTexture))
+            int(textureAllocator.alloc(glyphMap.texture))
 
             float(descriptor.height)
             skip(4)
         }
 
         var xOffset = 0.0
-        descriptor.text.forEach { char ->
+        descriptor.content.forEach { char ->
             val glyph = glyphMap.charDataOf(char)
 
             with(instanceBuffer) {
@@ -152,8 +156,19 @@ class MeshInterfaceRenderer : IRenderContext {
         }
     }
 
-    override fun fontWidth(string: String, height: Double) = string.sumOf {
-        glyphMap.charDataOf(it).getCharWidth(height)
+    override fun fontWidth(block: ITextDescriptor.() -> Unit): Double {
+        textDescriptor.reset()
+        block(textDescriptor)
+        return fontWidth(textDescriptor)
+    }
+
+    override fun fontWidth(descriptor: ITextDescriptor): Double {
+        val font = descriptor.font ?: defaultFont
+        val glyphMap = fontAllocator.alloc(font)
+
+        return descriptor.content.sumOf {
+            glyphMap.charDataOf(it).getCharWidth(descriptor.height)
+        }
     }
 
     fun use(block: IRenderContext.() -> Unit) {
@@ -164,14 +179,14 @@ class MeshInterfaceRenderer : IRenderContext {
         projectionMatrixAllocator.flush()
         viewMatrixAllocator.flush()
         modelMatrixAllocator.flush()
+
         textureAllocator.flush()
+        fontAllocator.flush()
 
         instanceBuffer.upload()
         rectInstanceBuffer.upload()
         stringInstanceBuffer.upload()
         charInstanceBuffer.upload()
-
-        Mesh.boundTexture[TextureSlot.Slot0] = sdfTexture
 
         Mesh.boundShader = shader
         Mesh.render(rectInstanceCount + charInstanceCount)

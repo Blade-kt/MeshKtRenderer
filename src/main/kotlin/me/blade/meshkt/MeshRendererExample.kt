@@ -10,6 +10,7 @@ import org.lwjgl.opengl.GL
 import org.lwjgl.opengl.GL11C.*
 import org.lwjgl.system.MemoryStack
 import java.awt.Color
+import java.awt.Font
 import java.nio.IntBuffer
 import kotlin.properties.Delegates
 
@@ -39,18 +40,25 @@ object MeshRendererExample {
         Mesh.ui.use {
             bindMatrix(MatrixType.Projection, projectionMatrix)
 
-            val string = "SomeAshitty_string@ё"
+            val text = createTextDescriptor {
+                font = getFont("SansSerif", Font.ITALIC)
+                content = "SomeAshitty_string@ё"
+                height = 100.0
+                pos = Vec2.create(10.0, 400.0)
+            }
 
             rect {
                 pos1 = Vec2.create(10.0, 300.0)
-                pos2 = Vec2.create(10.0 + fontWidth(string, 100.0), 400.0)
+                pos2 = Vec2.create(10.0 + fontWidth(text), 400.0)
                 color = Color.ORANGE.darker()
             }
 
-            font {
-                text = string
-                pos = Vec2.create(10.0, 400.0)
-                height = 100.0
+            text(text)
+
+            text {
+                content = "Comic Sans MS"
+                height = 50.0
+                pos = Vec2.create(10.0, 60.0)
             }
         }
 

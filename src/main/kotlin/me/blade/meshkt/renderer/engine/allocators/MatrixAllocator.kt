@@ -1,4 +1,4 @@
-package me.blade.meshkt.renderer.engine
+package me.blade.meshkt.renderer.engine.allocators
 
 import me.blade.meshkt.renderer.objects.buffer.Buffer
 import org.joml.Matrix4f
