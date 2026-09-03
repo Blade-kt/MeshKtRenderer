@@ -19,27 +19,7 @@ enum class TextureSlot(override val gl: Int) : GLInt {
     Slot12(GL_TEXTURE12),
     Slot13(GL_TEXTURE13),
     Slot14(GL_TEXTURE14),
-    Slot15(GL_TEXTURE15),
-    Slot16(GL_TEXTURE16),
-    Slot17(GL_TEXTURE17),
-    Slot18(GL_TEXTURE18),
-    Slot19(GL_TEXTURE19),
-    Slot20(GL_TEXTURE20),
-    Slot21(GL_TEXTURE21),
-    Slot22(GL_TEXTURE22),
-    Slot23(GL_TEXTURE23),
-    Slot24(GL_TEXTURE24),
-    Slot25(GL_TEXTURE25),
-    Slot26(GL_TEXTURE26),
-    Slot27(GL_TEXTURE27),
-    Slot28(GL_TEXTURE28),
-    Slot29(GL_TEXTURE29),
-    Slot30(GL_TEXTURE30),
-    Slot31(GL_TEXTURE31);
+    Slot15(GL_TEXTURE15);
 
     val unitIndex = gl - GL_TEXTURE0
-
-    companion object {
-        val reversedEntries = entries.reversed()
-    }
 }

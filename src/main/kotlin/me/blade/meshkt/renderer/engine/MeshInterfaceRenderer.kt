@@ -9,6 +9,7 @@ import me.blade.meshkt.renderer.engine.font.buildGlyphMap
 import me.blade.meshkt.renderer.engine.font.sdf
 import me.blade.meshkt.renderer.objects.createShader
 import me.blade.meshkt.renderer.objects.shader.properties.ShaderType
+import me.blade.meshkt.renderer.objects.texture.Texture
 import me.blade.meshkt.renderer.objects.texture.properties.TextureSlot
 import me.blade.meshkt.renderer.util.packColorARGB
 import me.blade.meshkt.renderer.util.packVec2
@@ -17,7 +18,7 @@ import me.blade.meshkt.renderer.util.resourceText
 import org.joml.Matrix4f
 import java.awt.Font
 
-object MeshRenderer : IRenderContext {
+class MeshInterfaceRenderer : IRenderContext {
     private val glyphMap = buildGlyphMap(
         Font("Arial", Font.PLAIN, 128)
     )
@@ -25,8 +26,8 @@ object MeshRenderer : IRenderContext {
     private val sdfTexture = sdf(glyphMap.image)
 
     private val shader = createShader {
-        compileSource(ShaderType.Vertex) { resourceText("/mesh/shaders/renderer.vsh") }
-        compileSource(ShaderType.Fragment) { resourceText("/mesh/shaders/renderer.fsh") }
+        compileSource(ShaderType.Vertex) { resourceText("/me/blade/mesh/shaders/interface.vsh") }
+        compileSource(ShaderType.Fragment) { resourceText("/me/blade/mesh/shaders/interface.fsh") }
         link()
 
         val glyphs = glyphMap.charData.values
@@ -47,20 +48,17 @@ object MeshRenderer : IRenderContext {
     }
     private val storage = shader.storage
 
-    private const val INSTANCE_BUFFER_BITS = 4
-    private const val INSTANCE_POINTER_BITS = 28
     private val instanceBuffer = storage.allocate("InstanceBuffer")
-    private val textureHandleBuffer = storage.allocate("TextureHandleBuffer")
+    private val textureAllocator = TextureAllocator(storage.allocate("TextureHandleBuffer"))
 
     /* Rect */
     private val rectDescriptor = RectDescriptor()
-    private const val RECT_BUFFER_INDEX = 0
+
     private var rectInstanceCount = 0
     private val rectInstanceBuffer = storage.allocate("RectInstanceBuffer")
 
     /* Font */
     private val fontDescriptor = FontDescriptor()
-    private const val CHAR_BUFFER_INDEX = 1
     private var stringInstanceCount = 0
     private var charInstanceCount = 0
     private val stringInstanceBuffer = storage.allocate("StringInstanceBuffer")
@@ -99,7 +97,7 @@ object MeshRenderer : IRenderContext {
             vec2(descriptor.pos2)
             int(packColorARGB(descriptor.color))
             int(packedMatrices)
-            int(0) // tex index
+            int(textureAllocator.alloc(descriptor.texture))
             skip(4)
         }
 
@@ -123,7 +121,13 @@ object MeshRenderer : IRenderContext {
         val stringIndex = stringInstanceCount++
         with(stringInstanceBuffer) {
             int(packedMatrices)
+
+            // TODO: on-fly glyph map generator
+            // (and this actually should be per-char)
+            int(textureAllocator.alloc(sdfTexture))
+
             float(descriptor.height)
+            skip(4)
         }
 
         var xOffset = 0.0
@@ -160,17 +164,14 @@ object MeshRenderer : IRenderContext {
         projectionMatrixAllocator.flush()
         viewMatrixAllocator.flush()
         modelMatrixAllocator.flush()
+        textureAllocator.flush()
 
         instanceBuffer.upload()
         rectInstanceBuffer.upload()
         stringInstanceBuffer.upload()
         charInstanceBuffer.upload()
 
-        textureHandleBuffer.apply {
-            reset()
-            long(sdfTexture.bindlessHandle)
-            upload()
-        }
+        Mesh.boundTexture[TextureSlot.Slot0] = sdfTexture
 
         Mesh.boundShader = shader
         Mesh.render(rectInstanceCount + charInstanceCount)
@@ -190,5 +191,13 @@ object MeshRenderer : IRenderContext {
         projectionMatrixAllocator.reset()
         viewMatrixAllocator.reset()
         modelMatrixAllocator.reset()
+        textureAllocator.reset()
+    }
+
+    companion object {
+        private const val INSTANCE_BUFFER_BITS = 4
+        private const val INSTANCE_POINTER_BITS = 28
+        private const val RECT_BUFFER_INDEX = 0
+        private const val CHAR_BUFFER_INDEX = 1
     }
 }

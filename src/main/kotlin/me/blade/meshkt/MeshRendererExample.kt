@@ -2,7 +2,7 @@ package me.blade.meshkt
 
 import me.blade.meshkt.renderer.Mesh
 import me.blade.meshkt.renderer.engine.MatrixType
-import me.blade.meshkt.renderer.engine.MeshRenderer
+import me.blade.meshkt.renderer.state.BlendFunc
 import me.blade.meshkt.renderer.util.vec.Vec2
 import org.joml.Matrix4f
 import org.lwjgl.glfw.GLFW.*
@@ -30,12 +30,13 @@ object MeshRendererExample {
             -1f, 1f
         )
 
+        Mesh.frameBegin()
         Mesh.begin()
 
-        glEnable(GL_BLEND)
-        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
+        Mesh.blend = true
+        Mesh.blendFunc = BlendFunc.default
 
-        MeshRenderer.use {
+        Mesh.ui.use {
             bindMatrix(MatrixType.Projection, projectionMatrix)
 
             val string = "SomeAshitty_string@ё"
@@ -43,7 +44,7 @@ object MeshRendererExample {
             rect {
                 pos1 = Vec2.create(10.0, 300.0)
                 pos2 = Vec2.create(10.0 + fontWidth(string, 100.0), 400.0)
-                color = Color.CYAN
+                color = Color.ORANGE.darker()
             }
 
             font {
@@ -53,8 +54,8 @@ object MeshRendererExample {
             }
         }
 
-        MeshRenderer.flush()
-        MeshRenderer.fence()
+        Mesh.ui.flush()
+
         Mesh.end()
     }
 

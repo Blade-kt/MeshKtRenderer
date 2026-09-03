@@ -1,31 +1,8 @@
 package me.blade.meshkt.renderer.state
 
-import org.lwjgl.opengl.GL11C.GL_DST_ALPHA
-import org.lwjgl.opengl.GL11C.GL_DST_COLOR
-import org.lwjgl.opengl.GL11C.GL_ONE
-import org.lwjgl.opengl.GL11C.GL_ONE_MINUS_DST_ALPHA
-import org.lwjgl.opengl.GL11C.GL_ONE_MINUS_DST_COLOR
-import org.lwjgl.opengl.GL11C.GL_ONE_MINUS_SRC_ALPHA
-import org.lwjgl.opengl.GL11C.GL_ONE_MINUS_SRC_COLOR
-import org.lwjgl.opengl.GL11C.GL_SRC_ALPHA
-import org.lwjgl.opengl.GL11C.GL_SRC_ALPHA_SATURATE
-import org.lwjgl.opengl.GL11C.GL_SRC_COLOR
-import org.lwjgl.opengl.GL11C.GL_ZERO
-import org.lwjgl.opengl.GL14C.GL_CONSTANT_ALPHA
-import org.lwjgl.opengl.GL14C.GL_CONSTANT_COLOR
-import org.lwjgl.opengl.GL14C.GL_FUNC_ADD
-import org.lwjgl.opengl.GL14C.GL_FUNC_REVERSE_SUBTRACT
-import org.lwjgl.opengl.GL14C.GL_FUNC_SUBTRACT
-import org.lwjgl.opengl.GL14C.GL_MAX
-import org.lwjgl.opengl.GL14C.GL_MIN
-import org.lwjgl.opengl.GL14C.GL_ONE_MINUS_CONSTANT_ALPHA
-import org.lwjgl.opengl.GL14C.GL_ONE_MINUS_CONSTANT_COLOR
-import org.lwjgl.opengl.GL15C.GL_SRC1_ALPHA
-import org.lwjgl.opengl.GL33C.GL_ONE_MINUS_SRC1_ALPHA
-import org.lwjgl.opengl.GL33C.GL_ONE_MINUS_SRC1_COLOR
-import org.lwjgl.opengl.GL33C.GL_SRC1_COLOR
+import org.lwjgl.opengl.GL46C.*
 
-enum class BlendFactor(val gl: Int) {
+enum class BlendFactor(override val gl: Int): GLInt {
     Zero(GL_ZERO),
     One(GL_ONE),
     SrcColor(GL_SRC_COLOR),
@@ -44,15 +21,35 @@ enum class BlendFactor(val gl: Int) {
     Src1Color(GL_SRC1_COLOR),
     OneMinusSrc1Color(GL_ONE_MINUS_SRC1_COLOR),
     Src1Alpha(GL_SRC1_ALPHA),
-    OneMinusSrc1Alpha(GL_ONE_MINUS_SRC1_ALPHA)
+    OneMinusSrc1Alpha(GL_ONE_MINUS_SRC1_ALPHA);
+
+    companion object {
+        private val valueMap = hashMapOf<Int, BlendFactor>().apply {
+            BlendFactor.entries.forEach { entry ->
+                this[entry.gl] = entry
+            }
+        }
+
+        fun get(pname: Int) = valueMap[glGetInteger(pname)]!!
+    }
 }
 
-enum class BlendEquationMode(val gl: Int) {
+enum class BlendEquationMode(override val gl: Int): GLInt {
     FuncAdd(GL_FUNC_ADD),
     FuncSubtract(GL_FUNC_SUBTRACT),
     FuncReverseSubtract(GL_FUNC_REVERSE_SUBTRACT),
     Min(GL_MIN),
-    Max(GL_MAX)
+    Max(GL_MAX);
+
+    companion object {
+        private val valueMap = hashMapOf<Int, BlendEquationMode>().apply {
+            BlendEquationMode.entries.forEach { entry ->
+                this[entry.gl] = entry
+            }
+        }
+
+        fun get(pname: Int) = valueMap[glGetInteger(pname)]!!
+    }
 }
 
 data class BlendFunc(
@@ -62,6 +59,26 @@ data class BlendFunc(
     val dstAlpha: BlendFactor
 ) {
     constructor(src: BlendFactor, dst: BlendFactor) : this(src, dst, src, dst)
+
+    fun apply() {
+        glBlendFuncSeparate(srcRgb.gl, dstRgb.gl, srcAlpha.gl, dstAlpha.gl)
+    }
+
+    companion object {
+        fun fromGL() = BlendFunc(
+            BlendFactor.get(GL_BLEND_SRC_RGB),
+            BlendFactor.get(GL_BLEND_DST_RGB),
+            BlendFactor.get(GL_BLEND_SRC_ALPHA),
+            BlendFactor.get(GL_BLEND_DST_ALPHA)
+        )
+
+        val default = BlendFunc(
+            BlendFactor.SrcAlpha,
+            BlendFactor.OneMinusSrcAlpha,
+            BlendFactor.One,
+            BlendFactor.OneMinusSrcAlpha
+        )
+    }
 }
 
 data class BlendEquation(
@@ -69,4 +86,15 @@ data class BlendEquation(
     val modeAlpha: BlendEquationMode
 ) {
     constructor(mode: BlendEquationMode) : this(mode, mode)
+
+    fun apply() {
+        glBlendEquationSeparate(modeRgb.gl, modeAlpha.gl)
+    }
+
+    companion object {
+        fun fromGL() = BlendEquation(
+            BlendEquationMode.get(GL_BLEND_EQUATION_RGB),
+            BlendEquationMode.get(GL_BLEND_EQUATION_ALPHA)
+        )
+    }
 }

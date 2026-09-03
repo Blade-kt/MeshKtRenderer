@@ -9,18 +9,16 @@ import me.blade.meshkt.renderer.objects.framebuffer.properties.FramebufferAttach
 import me.blade.meshkt.renderer.objects.shader.properties.ShaderType
 import me.blade.meshkt.renderer.objects.texture.Texture
 import me.blade.meshkt.renderer.objects.texture.properties.*
-import me.blade.meshkt.renderer.util.Quad
 import me.blade.meshkt.renderer.util.rent
 import me.blade.meshkt.renderer.util.resourceText
 import me.blade.meshkt.renderer.util.vec.Vec4i
 import org.joml.Matrix4f
-import org.lwjgl.opengl.GL11C.*
 import java.awt.image.BufferedImage
 
 const val SDF_DOWNSCALE = 8
 const val SDF_SCAN = 8
 
-fun sdf(image: BufferedImage): Texture {
+fun sdf(image: BufferedImage): Texture = Mesh.ensureStateSetup {
     val srcWidth = image.width
     val srcHeight = image.height
     val dstWidth = srcWidth / SDF_DOWNSCALE
@@ -71,13 +69,13 @@ fun sdf(image: BufferedImage): Texture {
     }
 
     val shader = createShader {
-        compileSource(ShaderType.Vertex) { resourceText("/mesh/shaders/sdfgen.vsh") }
-        compileSource(ShaderType.Fragment) { resourceText("/mesh/shaders/sdfgen.fsh") }
+        compileSource(ShaderType.Vertex) { resourceText("/me/blade/mesh/shaders/sdfgen.vsh") }
+        compileSource(ShaderType.Fragment) { resourceText("/me/blade/mesh/shaders/sdfgen.fsh") }
         link()
     }
 
     Mesh.boundTexture[TextureSlot.Slot0] = inputTexture
-    Mesh.boundShader = shader
+
     shader.uniforms {
         sampler("u_FONT_TEXTURE", TextureSlot.Slot0)
         mat4("u_MATRIX", Matrix4f().ortho(0f, dstWidth.toFloat(), 0f, dstHeight.toFloat(), -1f, 1f))
@@ -87,16 +85,17 @@ fun sdf(image: BufferedImage): Texture {
         int("u_SDF_SCAN", SDF_SCAN)
     }
 
-    rent(Mesh::viewport, Vec4i.create(0, 0, dstWidth, dstHeight)) {
-        rent(Mesh::writeFramebuffer, framebuffer) {
-            Mesh.render(1)
+    rent(Mesh::boundShader, shader) {
+        rent(Mesh::viewport, Vec4i.create(0, 0, dstWidth, dstHeight)) {
+            rent(Mesh::writeFramebuffer, framebuffer) {
+                Mesh.render(1)
+            }
         }
     }
 
     inputTexture.free()
     framebuffer.free()
-    Mesh.boundShader = null
     shader.free()
 
-    return outputTexture
+    return@ensureStateSetup outputTexture
 }

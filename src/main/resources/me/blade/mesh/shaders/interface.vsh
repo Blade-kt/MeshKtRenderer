@@ -23,7 +23,9 @@ struct RectInstance {
 
 struct StringInstance {
     int packedMatrices;
+    int textureIndex;
     float height;
+    int _pad[1];
 };
 
 struct CharInstance {
@@ -127,7 +129,7 @@ void _CHAR(CharInstance charInstance, vec2 uv01) {
     vec4 charPosition = vec4(mix(pos1, pos2, uv01), 0.0, 1.0);
 
     s_VERTEX_COLOR = vec4(1.0);
-    s_TEXTURE_INDEX = 0.0;
+    s_TEXTURE_INDEX = stringInstance.textureIndex;
 
     s_INSTANCE_UV = uv01;
     s_SAMPLER_UV = mix(glyphInfo.uv1, glyphInfo.uv2, uv01);

@@ -20,7 +20,13 @@ layout (std430) readonly buffer TextureHandleBuffer {
 
 void main() {
     int BUFFER_INDEX = int(s_DRAW_BUFFER_INDEX);
-    vec4 textureColor = texture(sampler2D(textureAccess.handleArray[int(s_TEXTURE_INDEX)]), s_SAMPLER_UV);
+    int TEXTURE_INDEX = int(s_TEXTURE_INDEX);
+
+    vec4 textureColor = vec4(1.0, 1.0, 1.0, 1.0);
+
+    if (TEXTURE_INDEX != -1) {
+        textureColor = texture(sampler2D(textureAccess.handleArray[TEXTURE_INDEX]), s_SAMPLER_UV);
+    }
 
     if (BUFFER_INDEX == RECT_BUFFER_INDEX) {
         COLOR_ATTACHMENT0 = s_VERTEX_COLOR;
