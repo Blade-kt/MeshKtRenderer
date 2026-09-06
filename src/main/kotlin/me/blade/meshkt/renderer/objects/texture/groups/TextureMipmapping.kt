@@ -24,4 +24,11 @@ class TextureMipmapping(private val texture: Texture) {
     fun generate() {
         glGenerateTextureMipmap(texture.id)
     }
+
+    fun migrateFrom(otherMipMapping: TextureMipmapping) {
+        baseLevel = otherMipMapping.baseLevel
+        maxLevel = otherMipMapping.maxLevel
+        minLOD = otherMipMapping.minLOD
+        maxLOD = otherMipMapping.maxLOD
+    }
 }

@@ -6,9 +6,9 @@ import java.awt.Font
 import java.awt.FontMetrics
 import java.awt.image.BufferedImage
 import kotlin.collections.forEach
-import kotlin.math.roundToInt
 
 const val FONT_SIZE = 512f
+const val CHAR_STEP = 32
 
 private val supportedCharacters = buildString {
     append(' ')
@@ -92,11 +92,11 @@ fun buildGlyphMap(fontIn: Font): GlyphMap {
 
     val center = (metrics.ascent + metrics.descent) * 0.5 / metrics.height
     val texture = sdf(image)
-    return GlyphMap(texture,center, charMap)
+    return GlyphMap(texture, center, charMap)
 }
 
 private fun getRenderPositions(chars: List<BufferedImage>, rowHeight: Int, minSize: Int = 128): Pair<ArrayList<Pair<Int, Int>>, Int> {
-    val space = 16
+    val space = CHAR_STEP
 
     var x = space
     var y = space
@@ -136,8 +136,6 @@ private fun getCharacterImage(metrics: FontMetrics, char: Char): Pair<BufferedIm
 
     val image = BufferedImage(width, metrics.height - metrics.leading, BufferedImage.TYPE_BYTE_GRAY)
     val graphics = image.createGraphics()
-
-    val bounds = metrics.getMaxCharBounds(graphics)
 
     graphics.font = metrics.font
     graphics.color = Color.WHITE

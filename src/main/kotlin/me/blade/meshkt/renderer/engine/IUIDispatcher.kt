@@ -2,11 +2,11 @@ package me.blade.meshkt.renderer.engine
 
 import me.blade.meshkt.renderer.engine.descriptors.IRectDescriptor
 import me.blade.meshkt.renderer.engine.descriptors.ITextDescriptor
-import me.blade.meshkt.renderer.engine.descriptors.TextDescriptor
+import me.blade.meshkt.renderer.engine.descriptors.ScissorData
 import org.joml.Matrix4f
 import java.awt.Font
 
-interface IRenderContext {
+interface IUIDispatcher {
     fun getFont(name: String, styleBitmask: Int = Font.PLAIN) =
         Font(name, styleBitmask, 67 /* we actually override this anyway */)
 
@@ -22,4 +22,7 @@ interface IRenderContext {
 
     fun fontWidth(block: ITextDescriptor.() -> Unit): Double
     fun fontWidth(descriptor: ITextDescriptor): Double
+
+    fun pushScissor(scissorData: ScissorData, clamp: Boolean = true)
+    fun popScissor()
 }

@@ -53,16 +53,16 @@ class StateManager {
         glBindTextureUnit(slot.unitIndex, texture?.id ?: 0)
     }
 
-    var depthTestState = TrackedState.createToggleStateBoolean(GL_DEPTH_TEST)
-    var depthMaskState = TrackedState.createParameterStateBoolean(GL_DEPTH_WRITEMASK, ::glDepthMask)
+    var depthTestState = TrackedState.createToggleBoolean(GL_DEPTH_TEST)
+    var depthMaskState = TrackedState.createParameterBoolean(GL_DEPTH_WRITEMASK, ::glDepthMask)
     var depthFuncState = TrackedState.createEnum<Func>(GL_DEPTH_FUNC, ::glDepthFunc)
     var depthRangeState = TrackedState.create(
         originalGetter = { glGetDoubleRange(GL_DEPTH_RANGE) },
         stateApplier = { glDepthRange(it.start, it.endInclusive) },
     )
-    var depthClampState = TrackedState.createToggleStateBoolean(GL_DEPTH_CLAMP)
+    var depthClampState = TrackedState.createToggleBoolean(GL_DEPTH_CLAMP)
 
-    var blendState = TrackedState.createToggleStateBoolean(GL_BLEND)
+    var blendState = TrackedState.createToggleBoolean(GL_BLEND)
     var blendFuncState = TrackedState.create(BlendFunc::fromGL, BlendFunc::apply)
     var blendEquationState = TrackedState.create(BlendEquation::fromGL, BlendEquation::apply)
     var blendColorState = TrackedState.create(
@@ -82,7 +82,10 @@ class StateManager {
     private var stateReady = false
 
     fun begin() {
-        stateTrackers.forEach(TrackedState<*, *>::begin)
+        check(!stateReady) {
+            "StateManager.begin() called twice"
+        }
+        stateTrackers.forEach(TrackedState<*, *>::capture)
 
         TextureSlot.entries.forEach { slot ->
             activeTextureState.apply(slot)
@@ -95,13 +98,16 @@ class StateManager {
     }
 
     fun end() {
+        check(stateReady) {
+            "StateManager.end() called twice, or the begin() method was not invoked first"
+        }
         stateReady = false
         prevBoundTextures.entries.forEach { (slot, id) ->
             activeTextureState.apply(slot)
             glBindTexture(GL_TEXTURE_2D, id!!)
         }
 
-        stateTrackers.forEach(TrackedState<*, *>::end)
+        stateTrackers.forEach(TrackedState<*, *>::revert)
     }
 
     fun <R> ensureStateSetup(block: () -> R): R {
@@ -118,7 +124,7 @@ class StateManager {
 
     fun validate() {
         check(stateReady) {
-            "OpenGL state is not setup. Consider using it within Mesh::begin - Mesh::end calls."
+            "OpenGL state is not setup. Consider using it within StateManager/Mesh.begin() - StateManager/Mesh.end() calls."
         }
     }
 }

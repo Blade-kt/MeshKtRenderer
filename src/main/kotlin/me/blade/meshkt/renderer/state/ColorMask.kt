@@ -4,16 +4,19 @@ import org.lwjgl.opengl.GL46C.*
 import java.nio.ByteBuffer
 
 data class ColorMask(
-    val r: Boolean = true,
-    val g: Boolean = true,
-    val b: Boolean = true,
-    val a: Boolean = true,
+    val r: Boolean,
+    val g: Boolean,
+    val b: Boolean,
+    val a: Boolean,
 ) {
     fun apply() {
         glColorMask(r, g, b, a)
     }
 
     companion object {
+        val ALL = ColorMask(r = true, g = true, b = true, a = true)
+        val NONE = ColorMask(r = false, g = false, b = false, a = false)
+
         private val buffer = ByteBuffer.allocateDirect(4)
 
         fun fromGL(): ColorMask {

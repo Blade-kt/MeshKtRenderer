@@ -2,6 +2,7 @@ package me.blade.meshkt.renderer.objects
 
 import me.blade.meshkt.renderer.objects.buffer.Buffer
 import me.blade.meshkt.renderer.objects.framebuffer.Framebuffer
+import me.blade.meshkt.renderer.objects.framebuffer.ViewportFramebuffer
 import me.blade.meshkt.renderer.objects.shader.Shader
 import me.blade.meshkt.renderer.objects.texture.Texture
 import me.blade.meshkt.renderer.util.MeshDslObj3ct
@@ -13,6 +14,11 @@ fun createBuffer(initialCapacity: Long = 1024, fixed: Boolean = false, block: Bu
 @MeshDslObj3ct
 fun createFramebuffer(block: Framebuffer.() -> Unit = {}) =
     Framebuffer(null).apply(block)
+
+@MeshDslObj3ct
+fun createViewportFramebuffer(block: Framebuffer.() -> Unit = {}) =
+    ViewportFramebuffer().apply(block)
+
 
 @MeshDslObj3ct
 fun createShader(block: Shader.() -> Unit = {}) =

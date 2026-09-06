@@ -23,4 +23,11 @@ class TextureWrapping(texture: Texture) {
     var borderColor by property(Quad(0f, 0f, 0f, 0f)) { value ->
         glTextureParameterfv(texture.id, GL_TEXTURE_BORDER_COLOR, value.toList().toFloatArray())
     }
+
+    fun migrateFrom(otherWrapping: TextureWrapping) {
+        wrapS = otherWrapping.wrapS
+        wrapT = otherWrapping.wrapT
+        wrapR = otherWrapping.wrapR
+        borderColor = otherWrapping.borderColor
+    }
 }

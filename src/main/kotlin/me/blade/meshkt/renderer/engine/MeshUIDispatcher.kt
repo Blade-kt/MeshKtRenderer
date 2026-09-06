@@ -1,27 +1,31 @@
 package me.blade.meshkt.renderer.engine
 
 import me.blade.meshkt.renderer.Mesh
+import me.blade.meshkt.renderer.engine.allocators.Color4Allocator
 import me.blade.meshkt.renderer.engine.allocators.FontAllocator
 import me.blade.meshkt.renderer.engine.allocators.MatrixAllocator
+import me.blade.meshkt.renderer.engine.allocators.ScissorStack
 import me.blade.meshkt.renderer.engine.allocators.TextureAllocator
 import me.blade.meshkt.renderer.engine.descriptors.TextDescriptor
 import me.blade.meshkt.renderer.engine.descriptors.IRectDescriptor
 import me.blade.meshkt.renderer.engine.descriptors.ITextDescriptor
 import me.blade.meshkt.renderer.engine.descriptors.RectDescriptor
-import me.blade.meshkt.renderer.objects.createFramebuffer
+import me.blade.meshkt.renderer.engine.descriptors.ScissorData
 import me.blade.meshkt.renderer.objects.createShader
-import me.blade.meshkt.renderer.objects.createTexture
-import me.blade.meshkt.renderer.objects.framebuffer.properties.FramebufferAttachment
 import me.blade.meshkt.renderer.objects.shader.properties.ShaderType
 import me.blade.meshkt.renderer.objects.texture.properties.TextureSlot
+import me.blade.meshkt.renderer.util.Quad
 import me.blade.meshkt.renderer.util.packColorARGB
 import me.blade.meshkt.renderer.util.packVec2
 import me.blade.meshkt.renderer.util.packVec3
+import me.blade.meshkt.renderer.util.packVec4
 import me.blade.meshkt.renderer.util.resourceText
 import org.joml.Matrix4f
 import java.awt.Font
+import kotlin.math.min
+import kotlin.math.roundToInt
 
-class MeshInterfaceRenderer : IRenderContext {
+class MeshUIDispatcher : IUIDispatcher {
     private val shader = createShader {
         compileSource(ShaderType.Vertex) { resourceText("/me/blade/mesh/shaders/interface.vsh") }
         compileSource(ShaderType.Fragment) { resourceText("/me/blade/mesh/shaders/interface.fsh") }
@@ -34,19 +38,17 @@ class MeshInterfaceRenderer : IRenderContext {
         }
     }
 
-    val framebuffer = createFramebuffer {
-
-    }
-
     private val storage = shader.storage
 
-
+    private val scissorStack = ScissorStack(storage.allocate("ScissorDataBuffer"))
+    private val scissorIndexBuffer = storage.allocate("ScissorIndexBuffer")
 
     private val instanceBuffer = storage.allocate("InstanceBuffer")
     private val textureAllocator = TextureAllocator(storage.allocate("TextureHandleBuffer"))
 
     /* Rect */
     private val rectDescriptor = RectDescriptor()
+    private val color4Allocator = Color4Allocator(storage.allocate("ColorBuffer"))
     private var rectInstanceCount = 0
     private val rectInstanceBuffer = storage.allocate("RectInstanceBuffer")
 
@@ -72,6 +74,15 @@ class MeshInterfaceRenderer : IRenderContext {
         modelMatrixAllocator.bound,
     )
 
+    /**
+     * Note that the matrix count is limited per frame:
+     *
+     * Projection - 16
+     *
+     * View - 1 048 576
+     *
+     * Model - 256
+     */
     override fun bindMatrix(type: MatrixType, matrix: Matrix4f) {
         when (type) {
             MatrixType.Projection -> projectionMatrixAllocator
@@ -93,11 +104,18 @@ class MeshInterfaceRenderer : IRenderContext {
         with(rectInstanceBuffer) {
             vec2(descriptor.pos1)
             vec2(descriptor.pos2)
-            int(packColorARGB(descriptor.color))
+            int(color4Allocator.alloc(Quad(
+                descriptor.colorLeftTop,
+                descriptor.colorRightTop,
+                descriptor.colorRightBottom,
+                descriptor.colorLeftBottom
+            )))
+            int(descriptor.packRoundRadius())
             int(packedMatrices)
             int(textureAllocator.alloc(descriptor.texture))
-            skip(4)
         }
+
+        scissorIndexBuffer.int(scissorStack.activeScissorSlot)
 
         with(instanceBuffer) {
             int(packVec2(
@@ -124,20 +142,19 @@ class MeshInterfaceRenderer : IRenderContext {
 
         val stringIndex = stringInstanceCount++
         with(stringInstanceBuffer) {
+            int(packColorARGB(descriptor.color))
             int(packedMatrices)
-
             // TODO: on-fly glyph map generator for unlimited character support
             // (and this actually should be per-char)
             int(textureAllocator.alloc(glyphMap.texture))
-
             float(descriptor.height)
-            skip(4)
         }
 
         var xOffset = 0.0
         descriptor.content.forEach { char ->
             val glyph = glyphMap.charDataOf(char)
 
+            scissorIndexBuffer.int(scissorStack.activeScissorSlot)
             with(instanceBuffer) {
                 int(packVec2(
                     INSTANCE_BUFFER_BITS,
@@ -171,8 +188,16 @@ class MeshInterfaceRenderer : IRenderContext {
         }
     }
 
-    fun use(block: IRenderContext.() -> Unit) {
+    fun use(block: IUIDispatcher.() -> Unit) {
         block(this)
+    }
+
+    override fun pushScissor(scissorData: ScissorData, clamp: Boolean) {
+        scissorStack.push(scissorData, clamp)
+    }
+
+    override fun popScissor() {
+        scissorStack.pop()
     }
 
     fun flush() {
@@ -180,8 +205,12 @@ class MeshInterfaceRenderer : IRenderContext {
         viewMatrixAllocator.flush()
         modelMatrixAllocator.flush()
 
+        color4Allocator.flush()
         textureAllocator.flush()
         fontAllocator.flush()
+
+        scissorStack.flush()
+        scissorIndexBuffer.upload()
 
         instanceBuffer.upload()
         rectInstanceBuffer.upload()
@@ -189,17 +218,18 @@ class MeshInterfaceRenderer : IRenderContext {
         charInstanceBuffer.upload()
 
         Mesh.boundShader = shader
+        shader.uniforms.float("u_FONT_DIM_SIZE", 2048.0)
         Mesh.render(rectInstanceCount + charInstanceCount)
 
-        instanceBuffer.reset()
-
         rectInstanceCount = 0
-        rectInstanceBuffer.reset()
-
         stringInstanceCount = 0
         charInstanceCount = 0
+
+        instanceBuffer.reset()
+        rectInstanceBuffer.reset()
         stringInstanceBuffer.reset()
         charInstanceBuffer.reset()
+        scissorIndexBuffer.reset()
     }
 
     fun fence() {
@@ -207,7 +237,22 @@ class MeshInterfaceRenderer : IRenderContext {
         viewMatrixAllocator.reset()
         modelMatrixAllocator.reset()
         textureAllocator.reset()
+        color4Allocator.reset()
+        scissorStack.reset()
     }
+
+    private fun IRectDescriptor.packRoundRadius(): Int {
+        val maxRound = min((pos2.x - pos1.x), (pos2.y - pos1.y)) * 0.5
+
+        return packVec4(
+            8, 8, 8, 8,
+            roundRadiusRightBottom.coerceAtMost(maxRound).times(2).roundToInt().coerceIn(0..255),
+            roundRadiusRightTop.coerceAtMost(maxRound).times(2).roundToInt().coerceIn(0..255),
+            roundRadiusLeftBottom.coerceAtMost(maxRound).times(2).roundToInt().coerceIn(0..255),
+            roundRadiusLeftTop.coerceAtMost(maxRound).times(2).roundToInt().coerceIn(0..255),
+        )
+    }
+
 
     companion object {
         private const val INSTANCE_BUFFER_BITS = 4

@@ -40,6 +40,18 @@ class Texture(externalId: Int?) : ObjectHandle(
     fun mipmap(block: TextureMipmapping.() -> Unit) = block(mipmap)
     fun storage(block: TextureStorage.() -> Unit) = block(storage)
 
+    /**
+     * Migrates most of the properties from [other] to this texture
+     *
+     * NOTE: Storage properties are NOT migrated. You must manually specify the format,
+     * dimensions, and copy the pixels if needed
+     */
+    fun migrateFrom(other: Texture) {
+        filtering.migrateFrom(other.filtering)
+        wrapping.migrateFrom(other.wrapping)
+        mipmap.migrateFrom(other.mipmap)
+    }
+
     fun computeShaderBinding(slot: TextureSlot, access: BufferAccess, level: Int = 0, layered: Boolean = false, layer: Int = 0) {
         val internal = storage.internalFormat ?: throw IllegalStateException("Texture internalFormat is not specified")
         glBindImageTexture(slot.unitIndex, id, level, layered, layer, access.gl, internal.gl)

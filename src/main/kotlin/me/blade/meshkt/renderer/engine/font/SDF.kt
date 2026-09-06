@@ -49,7 +49,7 @@ fun sdf(image: BufferedImage): Texture = Mesh.ensureStateSetup {
 
     val outputTexture = createTexture {
         filtering {
-            minFilter = TextureMinFilter.Linear
+            minFilter = TextureMinFilter.LinearMipmapLinear
             magFilter = TextureMagFilter.Linear
         }
 

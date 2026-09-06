@@ -16,4 +16,9 @@ class TextureFiltering(texture: Texture) {
     var magFilter by property(TextureMagFilter.Linear) { value ->
         glTextureParameteri(texture.id, GL_TEXTURE_MAG_FILTER, value.gl)
     }
+
+    fun migrateFrom(otherFiltering: TextureFiltering) {
+        minFilter = otherFiltering.minFilter
+        magFilter = otherFiltering.magFilter
+    }
 }

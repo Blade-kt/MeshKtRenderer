@@ -1,6 +1,7 @@
 package me.blade.meshkt.renderer.engine.descriptors
 
 import me.blade.meshkt.renderer.util.vec.Vec2
+import java.awt.Color
 import java.awt.Font
 
 interface ITextDescriptor {
@@ -8,6 +9,7 @@ interface ITextDescriptor {
     var pos: Vec2
     var height: Double
     var content: String
+    var color: Color
 
     fun reset()
 }
@@ -17,6 +19,7 @@ class TextDescriptor : ITextDescriptor {
     override var pos = Vec2.ZERO
     override var height = 0.0
     override var content = ""
+    override var color = Color.WHITE!!
 
     override fun reset() {
         pos = Vec2.ZERO

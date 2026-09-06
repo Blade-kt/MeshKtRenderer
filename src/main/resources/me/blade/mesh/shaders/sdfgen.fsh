@@ -34,13 +34,11 @@ void main() {
             bool hasBlackNeighbor = !centerTopWhite || !centerLeftWhite || !centerRightWhite || !centerBottomWhite;
             bool isCorner = isWhite(vec2(readX, readY)) && hasBlackNeighbor;
 
-            if (isCorner) {
-                vec2 diff = vec2(srcX - readX, srcY - readY);
-                float currDst =  diff.x * diff.x + diff.y * diff.y;
-                if (currDst < distanceSq) {
-                    distanceSq = currDst;
-                }
-            }
+            if (!isCorner) continue;
+
+            vec2 diff = vec2(srcX - readX, srcY - readY);
+            float currDst =  diff.x * diff.x + diff.y * diff.y;
+            distanceSq = min(distanceSq, currDst);
         }
     }
 

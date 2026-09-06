@@ -15,5 +15,6 @@ interface Vec2 {
         fun create(x: Int, y: Int): Vec2 = Impl(x.toDouble(), y.toDouble())
 
         val ZERO = create(0, 0)
+        val ONE = create(1, 1)
     }
 }

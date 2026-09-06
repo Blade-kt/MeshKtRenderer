@@ -10,26 +10,60 @@ class TrackedState <NativeType: Any, ImplType> (
     private val mapToNative: (ImplType) -> NativeType,
     private val mapToImpl: (NativeType) -> ImplType,
 ) {
-    private var cachedValue by Delegates.notNull<NativeType>()
-    private var actualValue by Delegates.notNull<NativeType>()
-    var value: ImplType = mapToImpl(originalGetter()); private set
+    private class NullableValue <T> (var value: T)
 
-    operator fun getValue(obj: Any, property: KProperty<*>) = value
-    operator fun setValue(obj: Any, property: KProperty<*>, newValue0: ImplType) = apply(newValue0)
+    // value that was set outside mesh context
+    private var cachedValue by Delegates.notNull<NativeType>()
+
+    // value that represents actual gl state (if the impl is correct)
+    private var actualValue by Delegates.notNull<NativeType>()
+
+    // mapped value that represents actual gl state
+    private var valueStorage: NullableValue<ImplType>? = null
+    private var initialized = false
+
+    operator fun getValue(obj: Any, property: KProperty<*>): ImplType {
+        check(initialized) {
+            "State is not initialized"
+        }
+
+        val storage = valueStorage
+            ?: throw IllegalStateException("Value storage is not initialized. This kind of message should not appear")
+
+        return storage.value
+    }
+    operator fun setValue(obj: Any, property: KProperty<*>, newValue0: ImplType) {
+        apply(newValue0)
+    }
 
     fun apply(newValue: ImplType) {
-        value = newValue
+        check(initialized) {
+            "State is not initialized"
+        }
+
+        valueStorage = NullableValue(newValue)
         bind(mapToNative(newValue))
     }
 
-    fun begin() {
+    fun capture() {
+        check(!initialized) {
+            "State is already captured"
+        }
+
         actualValue = originalGetter()
         cachedValue = actualValue
-        value = mapToImpl(actualValue)
+        valueStorage = NullableValue(mapToImpl(actualValue))
+        initialized = true
     }
 
-    fun end() {
+    fun revert() {
+        check(initialized) {
+            "State is not initialized"
+        }
+
         bind(cachedValue)
+        initialized = false
+        valueStorage = null
     }
 
     private fun bind(v: NativeType) {
@@ -51,18 +85,26 @@ class TrackedState <NativeType: Any, ImplType> (
             mapToImpl: (S) -> T,
         ) = TrackedState(originalGetter, stateApplier, mapToNative, mapToImpl)
 
-        fun createToggleStateBoolean(
+        fun createToggleBoolean(
             key: Int
         ) = createBoolean(
             { glIsEnabled(key) },
             { if (it) glEnable(key) else glDisable(key) },
         )
 
-        fun createParameterStateBoolean(
+        fun createParameterBoolean(
             key: Int,
             setter: (Boolean) -> Unit
         ) = createBoolean(
             { glGetBoolean(key) },
+            { setter(it) },
+        )
+
+        fun createParameterInt(
+            key: Int,
+            setter: (Int) -> Unit
+        ) = create(
+            { glGetInteger(key) },
             { setter(it) },
         )
 
@@ -72,8 +114,6 @@ class TrackedState <NativeType: Any, ImplType> (
         ) = create(
             { getter() },
             { setter(it) },
-            { it },
-            { it }
         )
 
         inline fun <reified E> createEnum(

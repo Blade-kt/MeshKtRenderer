@@ -1,15 +1,33 @@
 package me.blade.meshkt.renderer.objects.framebuffer
 
-import me.blade.meshkt.renderer.Mesh
+import me.blade.meshkt.renderer.objects.createTexture
 import me.blade.meshkt.renderer.util.vec.Vec2i
 
 class ViewportFramebuffer : Framebuffer(null) {
     private var lastViewportSize: Vec2i? = null
+    val size: Vec2i get() = lastViewportSize ?: throw IllegalStateException("ViewportFramebuffer is not resized yed")
 
-    fun updateAndBind(viewportSize: Vec2i) {
-        Mesh.writeFramebuffer = this
+    fun resize(viewportSize: Vec2i) {
+        attachments.entries.forEach { (attachment, texture) ->
+            val oldTexture = texture ?: return@forEach
 
-        if (lastViewportSize == viewportSize) return
+            val newTexture = createTexture {
+                migrateFrom(oldTexture)
+
+                storage {
+                    internalFormat = oldTexture.storage.internalFormat
+                    width = viewportSize.x
+                    height = viewportSize.y
+
+                    oldTexture.free()
+                    allocate()
+                }
+            }
+
+            attachments[attachment] = newTexture
+        }
+
+        validate()
         lastViewportSize = viewportSize
     }
 }

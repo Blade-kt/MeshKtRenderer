@@ -2,7 +2,11 @@ package me.blade.meshkt
 
 import me.blade.meshkt.renderer.Mesh
 import me.blade.meshkt.renderer.engine.MatrixType
+import me.blade.meshkt.renderer.engine.descriptors.ScissorData
+import me.blade.meshkt.renderer.engine.font.buildGlyphMap
+import me.blade.meshkt.renderer.objects.createTexture
 import me.blade.meshkt.renderer.state.BlendFunc
+import me.blade.meshkt.renderer.state.ColorMask
 import me.blade.meshkt.renderer.util.vec.Vec2
 import org.joml.Matrix4f
 import org.lwjgl.glfw.GLFW.*
@@ -14,7 +18,7 @@ import java.awt.Font
 import java.nio.IntBuffer
 import kotlin.properties.Delegates
 
-object MeshRendererExample {
+object MeshExample {
     var viewportWidth = 1
     var viewportHeight = 1
     var window by Delegates.notNull<Long>()
@@ -24,7 +28,17 @@ object MeshRendererExample {
         mainEntry()
     }
 
+    private var lastPrint = 0L
+    private val time get() = System.currentTimeMillis()
+    private var frames = 0
     fun frame() {
+        if (time - lastPrint > 1000L) {
+            lastPrint = time
+            println(frames)
+            frames = 0
+        }
+        frames++
+
         val projectionMatrix = Matrix4f().ortho(
             0f, viewportWidth.toFloat(),
             viewportHeight.toFloat(), 0f,
@@ -32,39 +46,33 @@ object MeshRendererExample {
         )
 
         Mesh.frameBegin()
-        Mesh.begin()
+        Mesh.setupState()
 
         Mesh.blend = true
         Mesh.blendFunc = BlendFunc.default
 
-        Mesh.ui.use {
+        Mesh.dispatcherUI.use {
             bindMatrix(MatrixType.Projection, projectionMatrix)
 
-            val text = createTextDescriptor {
-                font = getFont("SansSerif", Font.ITALIC)
-                content = "SomeAshitty_string@ё"
-                height = 100.0
-                pos = Vec2.create(10.0, 400.0)
-            }
-
-            rect {
-                pos1 = Vec2.create(10.0, 300.0)
-                pos2 = Vec2.create(10.0 + fontWidth(text), 400.0)
-                color = Color.ORANGE.darker()
-            }
-
-            text(text)
-
-            text {
-                content = "Comic Sans MS"
+            val textDescriptor = createTextDescriptor {
+                content = "BladeCore"
+                pos = Vec2.create(50.0, 150.0)
                 height = 50.0
-                pos = Vec2.create(10.0, 60.0)
+                color = Color.RED
+            }
+
+            pushScissor(ScissorData(
+                Vec2.create(textDescriptor.pos.x, textDescriptor.pos.y - textDescriptor.height),
+                Vec2.create(textDescriptor.pos.x + fontWidth(textDescriptor), textDescriptor.pos.y - textDescriptor.height * 0.5),
+            ))
+
+            repeat(1) {
+                text(textDescriptor)
             }
         }
 
-        Mesh.ui.flush()
-
-        Mesh.end()
+        Mesh.dispatcherUI.flush()
+        Mesh.revertState()
     }
 
     private fun mainEntry() {
@@ -74,7 +82,15 @@ object MeshRendererExample {
         glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6)
         glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GLFW_FALSE)
         glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE)
-        window = glfwCreateWindow(1024, 768, "MeshRenderer Demo", 0L, 0L)
+
+        /*glfwWindowHint(GLFW_TRANSPARENT_FRAMEBUFFER, GLFW_TRUE)
+        glfwWindowHint(GLFW_MOUSE_PASSTHROUGH, GLFW_TRUE)
+        glfwWindowHint(GLFW_FLOATING, GLFW_TRUE)
+        glfwWindowHint(GLFW_DECORATED, GLFW_FALSE)*/
+
+        val monitorHandle = glfwGetPrimaryMonitor()
+        val mode = glfwGetVideoMode(monitorHandle)!!
+        window = glfwCreateWindow(mode.width() / 2, mode.height() / 2, "MeshRenderer Demo", 0L, 0L)
 
         glfwMakeContextCurrent(window)
         GL.createCapabilities()

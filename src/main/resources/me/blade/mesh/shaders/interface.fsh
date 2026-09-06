@@ -4,6 +4,11 @@
 #define RECT_BUFFER_INDEX 0
 #define CHAR_BUFFER_INDEX 1
 
+struct ScissorData {
+    vec2 pos1;
+    vec2 pos2;
+};
+
 uniform sampler2D u_TEXTURE0;
 
 in float s_DRAW_BUFFER_INDEX;
@@ -11,15 +16,25 @@ in float s_TEXTURE_INDEX;
 in vec2 s_INSTANCE_UV;
 in vec2 s_SAMPLER_UV;
 in vec4 s_VERTEX_COLOR;
+in vec4 s_ROUND_RADIUS;
+in vec2 s_RECT_SIZE;
+in ScissorData s_SCISSOR_DATA;
+in vec2 s_RAW_POSITION;
 
 out layout(location = 0) vec4 COLOR_ATTACHMENT0;
-out layout(location = 1) float SDF_ATTACHMENT;
+//out layout(location = 1) float SDF_ATTACHMENT;
 
 layout (std430) readonly buffer TextureHandleBuffer {
     sampler2D handleArray[];
 } textureAccess;
 
 void main() {
+    if (s_RAW_POSITION.x < s_SCISSOR_DATA.pos1.x ||
+        s_RAW_POSITION.y < s_SCISSOR_DATA.pos1.y ||
+        s_RAW_POSITION.x > s_SCISSOR_DATA.pos2.x ||
+        s_RAW_POSITION.y > s_SCISSOR_DATA.pos2.y
+    ) return;
+
     int BUFFER_INDEX = int(s_DRAW_BUFFER_INDEX);
     int TEXTURE_INDEX = int(s_TEXTURE_INDEX);
 
@@ -30,18 +45,25 @@ void main() {
     }
 
     if (BUFFER_INDEX == RECT_BUFFER_INDEX) {
-        COLOR_ATTACHMENT0 = s_VERTEX_COLOR;
+        vec4 r = s_ROUND_RADIUS * 0.5;
+        r.xy = (s_INSTANCE_UV.x > 0.5) ? r.xy : r.zw;
+        r.x  = (s_INSTANCE_UV.y > 0.5) ? r.x  : r.y;
+
+        vec2 q = s_RECT_SIZE * 0.5 * (abs(s_INSTANCE_UV - 0.5) - 0.5) + r.x;
+        float sdf = min(max(q.x, q.y), 0.0) + length(max(q, 0.0)) - r.x;
+
+        float smoothness = fwidth(sdf * 0.5 + 0.5);
+        float alpha = 1.0 - smoothstep(-smoothness, smoothness, sdf);
+        vec4 rectColor = vec4(1.0, 1.0, 1.0, alpha);
+
+        COLOR_ATTACHMENT0 = s_VERTEX_COLOR * textureColor * rectColor;
     }
 
     if (BUFFER_INDEX == CHAR_BUFFER_INDEX) {
         float sdf = textureColor.r;
-        float smoothness = fwidth(sdf) * 0.75;
+        float smoothness = fwidth(sdf);
         float alpha = smoothstep(0.5 - smoothness, 0.5 + smoothness, sdf);
         vec4 fontColor = vec4(1.0, 1.0, 1.0, alpha);
         COLOR_ATTACHMENT0 = s_VERTEX_COLOR * fontColor;
-    }
-
-    if ((s_INSTANCE_UV.x > 1.0) || (s_INSTANCE_UV.x < 0.0) || (s_INSTANCE_UV.y > 1.0) || (s_INSTANCE_UV.y < 0.0)) {
-        COLOR_ATTACHMENT0 = vec4(1, 0, 0, 1);
     }
 }

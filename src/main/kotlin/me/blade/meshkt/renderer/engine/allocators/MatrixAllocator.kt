@@ -8,7 +8,6 @@ class MatrixAllocator(val buffer: Buffer, val bits: Int) {
     val matrices = arrayListOf<Matrix4f>()
     var bound = 0
 
-    private var dirty = true
     private val maxCapacity = 1 shl bits
 
     fun bind(matrix: Matrix4f, unsafe: Boolean = false) {
@@ -16,7 +15,6 @@ class MatrixAllocator(val buffer: Buffer, val bits: Int) {
 
         bound = cache.getOrPut(copy.hashCode()) {
             matrices.add(copy)
-            dirty = true
 
             val newIndex = matrices.lastIndex
             check(newIndex < maxCapacity) {
@@ -31,13 +29,9 @@ class MatrixAllocator(val buffer: Buffer, val bits: Int) {
         matrices.clear()
         bound = 0
         bind(IDENTITY_MATRIX, true)
-        dirty = true
     }
 
     fun flush() {
-        if (!dirty) return
-        dirty = false
-
         buffer.reset()
         matrices.forEach(buffer::mat4)
         buffer.upload()
