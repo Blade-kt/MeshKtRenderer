@@ -1,8 +1,6 @@
 package me.blade.meshkt
 
 import me.blade.meshkt.renderer.Mesh
-import me.blade.meshkt.renderer.engine.MatrixType
-import me.blade.meshkt.renderer.engine.descriptors.ScissorData
 import me.blade.meshkt.renderer.state.BlendFunc
 import me.blade.meshkt.renderer.util.vec.Vec2
 import org.joml.Matrix4f
@@ -10,6 +8,7 @@ import org.lwjgl.glfw.GLFW.*
 import org.lwjgl.opengl.GL
 import org.lwjgl.opengl.GL11C.*
 import org.lwjgl.system.MemoryStack
+import java.awt.Color
 import java.nio.IntBuffer
 import kotlin.properties.Delegates
 
@@ -41,27 +40,16 @@ object MeshExample {
         )
 
         Mesh.frameBegin()
-
         Mesh.setupState()
 
         Mesh.blend = true
         Mesh.blendFunc = BlendFunc.CLASSIC
 
-        Mesh.dispatcherUI.use {
-            bindMatrix(MatrixType.Projection, projection)
+        Mesh.lines.projectionMatrix = projection
+        Mesh.lines.line(Vec2.create(100, 100), Vec2.create(200, 300), Color(255, 255, 255), 1.0)
 
-            pushScissor(ScissorData(Vec2.create(0, 300), Vec2.create(1000, 600)))
-
-            text {
-                content = "Mesh"
-                pos = Vec2.create(100.0, 500.0)
-                height = 400.0
-            }
-
-            popScissor()
-        }
-        Mesh.dispatcherLines.flush()
-        Mesh.dispatcherUI.flush()
+        Mesh.lines.flush()
+        Mesh.ui.flush()
         Mesh.revertState()
     }
 

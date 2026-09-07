@@ -20,6 +20,7 @@ enum class TextureInternalFormat(val gl: Int) {
     SRGB8(GL_SRGB8),
 
     // RGBA formats
+    BGRA(GL_BGRA),
     RGBA8(GL_RGBA8),
     RGBA16F(GL_RGBA16F),
     RGBA32F(GL_RGBA32F),
