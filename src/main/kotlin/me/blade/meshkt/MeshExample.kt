@@ -2,11 +2,7 @@ package me.blade.meshkt
 
 import me.blade.meshkt.renderer.Mesh
 import me.blade.meshkt.renderer.engine.MatrixType
-import me.blade.meshkt.renderer.engine.descriptors.ScissorData
-import me.blade.meshkt.renderer.engine.font.buildGlyphMap
-import me.blade.meshkt.renderer.objects.createTexture
 import me.blade.meshkt.renderer.state.BlendFunc
-import me.blade.meshkt.renderer.state.ColorMask
 import me.blade.meshkt.renderer.util.vec.Vec2
 import org.joml.Matrix4f
 import org.lwjgl.glfw.GLFW.*
@@ -14,7 +10,6 @@ import org.lwjgl.opengl.GL
 import org.lwjgl.opengl.GL11C.*
 import org.lwjgl.system.MemoryStack
 import java.awt.Color
-import java.awt.Font
 import java.nio.IntBuffer
 import kotlin.properties.Delegates
 
@@ -39,38 +34,50 @@ object MeshExample {
         }
         frames++
 
-        val projectionMatrix = Matrix4f().ortho(
+        val projection = Matrix4f().ortho(
             0f, viewportWidth.toFloat(),
             viewportHeight.toFloat(), 0f,
             -1f, 1f
         )
 
         Mesh.frameBegin()
+
         Mesh.setupState()
 
         Mesh.blend = true
-        Mesh.blendFunc = BlendFunc.default
+        Mesh.blendFunc = BlendFunc.CLASSIC
 
         Mesh.dispatcherUI.use {
-            bindMatrix(MatrixType.Projection, projectionMatrix)
+            bindMatrix(MatrixType.Projection, projection)
 
-            val textDescriptor = createTextDescriptor {
-                content = "BladeCore"
-                pos = Vec2.create(50.0, 150.0)
-                height = 50.0
-                color = Color.RED
-            }
-
-            pushScissor(ScissorData(
-                Vec2.create(textDescriptor.pos.x, textDescriptor.pos.y - textDescriptor.height),
-                Vec2.create(textDescriptor.pos.x + fontWidth(textDescriptor), textDescriptor.pos.y - textDescriptor.height * 0.5),
-            ))
-
-            repeat(1) {
-                text(textDescriptor)
+            text {
+                content = "Mesh"
+                pos = Vec2.create(100.0, 400.0)
+                height = 300.0
             }
         }
 
+        Mesh.dispatcherLines.projectionMatrix = projection
+
+        Mesh.dispatcherLines.line(
+            Vec2.create(200, 50),
+            Vec2.create(200, 300),
+            Color.RED, 10000.0
+        )
+
+        Mesh.dispatcherLines.line(
+            Vec2.create(20, 250),
+            Vec2.create(300, 250),
+            Color.GREEN
+        )
+
+        Mesh.dispatcherLines.line(
+            Vec2.create(220, 70),
+            Vec2.create(40, 270),
+            Color.BLUE
+        )
+
+        Mesh.dispatcherLines.flush()
         Mesh.dispatcherUI.flush()
         Mesh.revertState()
     }

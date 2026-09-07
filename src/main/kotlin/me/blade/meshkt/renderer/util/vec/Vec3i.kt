@@ -5,7 +5,7 @@ interface Vec3i {
     val y: Int
     val z: Int
 
-    private class Impl(
+    private data class Impl(
         override val x: Int,
         override val y: Int,
         override val z: Int

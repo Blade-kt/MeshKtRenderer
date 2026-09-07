@@ -1,8 +1,10 @@
 package me.blade.meshkt.renderer.objects.shader.groups
 
 import me.blade.meshkt.renderer.objects.shader.Shader
+import me.blade.meshkt.renderer.objects.texture.Texture
 import me.blade.meshkt.renderer.objects.texture.properties.TextureSlot
 import org.joml.Matrix4f
+import org.lwjgl.opengl.ARBBindlessTexture.glProgramUniformHandleui64ARB
 import org.lwjgl.opengl.GL20C.*
 import org.lwjgl.opengl.GL41C.*
 
@@ -11,6 +13,10 @@ class UniformWriter(private val shader: Shader) {
 
     fun sampler(name: String, value: TextureSlot) {
         glProgramUniform1i(shader.id, getUniformLocation(name), value.unitIndex)
+    }
+
+    fun bindlessSampler(name: String, texture: Texture) {
+        glProgramUniformHandleui64ARB(shader.id, getUniformLocation(name), texture.bindlessHandle)
     }
 
     fun int(name: String, value: Int) {

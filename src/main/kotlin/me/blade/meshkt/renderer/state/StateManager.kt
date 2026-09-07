@@ -71,12 +71,17 @@ class StateManager {
     )
     var colorMaskState = TrackedState.create(ColorMask::fromGL, ColorMask::apply)
 
+    var cullState = TrackedState.createToggleBoolean(GL_CULL_FACE)
+    var cullModeState = TrackedState.create(CullFaceMode::fromGL, CullFaceMode::apply)
+    var frontFaceState = TrackedState.create(FrontFace::fromGL, FrontFace::apply)
+
     private val stateTrackers = listOf(
         readFramebufferState, writeFramebufferState,
         boundShaderState, vertexArrayObjectState,
         viewportState, activeTextureState,
         depthTestState, depthMaskState, depthFuncState, depthRangeState, depthClampState,
-        blendState, blendFuncState, blendEquationState, blendColorState, colorMaskState
+        blendState, blendFuncState, blendEquationState, blendColorState, colorMaskState,
+        cullState, cullModeState, frontFaceState,
     )
 
     private var stateReady = false

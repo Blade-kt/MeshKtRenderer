@@ -27,7 +27,6 @@ class MatrixAllocator(val buffer: Buffer, val bits: Int) {
     fun reset() {
         cache.clear()
         matrices.clear()
-        bound = 0
         bind(IDENTITY_MATRIX, true)
     }
 
@@ -38,6 +37,6 @@ class MatrixAllocator(val buffer: Buffer, val bits: Int) {
     }
 
     companion object {
-        private val IDENTITY_MATRIX = Matrix4f().identity()
+        private val IDENTITY_MATRIX = Matrix4f()
     }
 }

@@ -17,6 +17,10 @@ class Shader : ObjectHandle(glCreateProgram(), false) {
         uniforms.block()
     }
 
+    fun fragment(text: String) = compileSource(ShaderType.Fragment) { text }
+    fun vertex(text: String) = compileSource(ShaderType.Vertex) { text }
+    fun compute(text: String) = compileSource(ShaderType.Compute) { text }
+
     fun compileSource(
         type: ShaderType,
         block: () -> String

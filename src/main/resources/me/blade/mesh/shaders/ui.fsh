@@ -11,8 +11,8 @@ struct ScissorData {
 
 uniform sampler2D u_TEXTURE0;
 
-in float s_DRAW_BUFFER_INDEX;
-in float s_TEXTURE_INDEX;
+flat in int s_DRAW_BUFFER_INDEX;
+flat in int s_TEXTURE_INDEX;
 in vec2 s_INSTANCE_UV;
 in vec2 s_SAMPLER_UV;
 in vec4 s_VERTEX_COLOR;
@@ -33,18 +33,19 @@ void main() {
         s_RAW_POSITION.y < s_SCISSOR_DATA.pos1.y ||
         s_RAW_POSITION.x > s_SCISSOR_DATA.pos2.x ||
         s_RAW_POSITION.y > s_SCISSOR_DATA.pos2.y
-    ) return;
-
-    int BUFFER_INDEX = int(s_DRAW_BUFFER_INDEX);
-    int TEXTURE_INDEX = int(s_TEXTURE_INDEX);
+    ) {
+        // fuck Intel drivers
+        COLOR_ATTACHMENT0 = vec4(0.0, 0.0, 0.0, 0.0);
+        return;
+    }
 
     vec4 textureColor = vec4(1.0, 1.0, 1.0, 1.0);
 
-    if (TEXTURE_INDEX != -1) {
-        textureColor = texture(sampler2D(textureAccess.handleArray[TEXTURE_INDEX]), s_SAMPLER_UV);
+    if (s_TEXTURE_INDEX != -1) {
+        textureColor = texture(sampler2D(textureAccess.handleArray[s_TEXTURE_INDEX]), s_SAMPLER_UV);
     }
 
-    if (BUFFER_INDEX == RECT_BUFFER_INDEX) {
+    if (s_DRAW_BUFFER_INDEX == RECT_BUFFER_INDEX) {
         vec4 r = s_ROUND_RADIUS * 0.5;
         r.xy = (s_INSTANCE_UV.x > 0.5) ? r.xy : r.zw;
         r.x  = (s_INSTANCE_UV.y > 0.5) ? r.x  : r.y;
@@ -59,7 +60,7 @@ void main() {
         COLOR_ATTACHMENT0 = s_VERTEX_COLOR * textureColor * rectColor;
     }
 
-    if (BUFFER_INDEX == CHAR_BUFFER_INDEX) {
+    if (s_DRAW_BUFFER_INDEX == CHAR_BUFFER_INDEX) {
         float sdf = textureColor.r;
         float smoothness = fwidth(sdf);
         float alpha = smoothstep(0.5 - smoothness, 0.5 + smoothness, sdf);

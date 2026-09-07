@@ -12,8 +12,8 @@ struct ScissorData {
 
 uniform float u_FONT_DIM_SIZE;
 
-out float s_DRAW_BUFFER_INDEX;
-out float s_TEXTURE_INDEX;
+flat out int s_DRAW_BUFFER_INDEX;
+flat out int s_TEXTURE_INDEX;
 out vec2 s_INSTANCE_UV;
 out vec2 s_SAMPLER_UV;
 out vec4 s_VERTEX_COLOR;
@@ -155,7 +155,7 @@ void _RECT(RectInstance rectInstance, vec2 uv01) {
     );
     s_ROUND_RADIUS = unpackRoundRadius(rectInstance.packedRoundRadius);
 
-    s_TEXTURE_INDEX = float(rectInstance.textureIndex);
+    s_TEXTURE_INDEX = rectInstance.textureIndex;
 
     s_INSTANCE_UV = uv01;
     s_SAMPLER_UV = uv01;
@@ -206,7 +206,7 @@ void main() {
     if (vertexIndex == 1)                     uv01 = vec2(0.0, 1.0); // top-left
     if (vertexIndex == 0 || vertexIndex == 3) uv01 = vec2(0.0, 0.0); // bottom-left
 
-    s_DRAW_BUFFER_INDEX = float(bufferIndex);
+    s_DRAW_BUFFER_INDEX = bufferIndex;
 
     int scissorIndex = scissorIndexAccess.scissorIndices[globalInstanceIndex];
     if (scissorIndex >= 0) {

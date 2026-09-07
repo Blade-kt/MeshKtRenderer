@@ -55,8 +55,14 @@ class ScissorStack(val buffer: Buffer) {
     }
 
     fun reset() {
-        activeScissorSlot = -1
+        cache.clear()
         data.clear()
+
+        check(stack.isEmpty()) {
+            "ScissorStack is not empty at reset phase. Check all stackPush/stackPop calls"
+        }
+
+        activeScissorSlot = -1
     }
 
     fun flush() {

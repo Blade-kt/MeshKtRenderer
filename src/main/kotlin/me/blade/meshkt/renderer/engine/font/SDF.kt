@@ -15,7 +15,7 @@ import me.blade.meshkt.renderer.util.vec.Vec4i
 import org.joml.Matrix4f
 import java.awt.image.BufferedImage
 
-const val SDF_DOWNSCALE = 8
+const val SDF_DOWNSCALE = 4
 const val SDF_SCAN = 8
 
 fun sdf(image: BufferedImage): Texture = Mesh.ensureStateSetup {

@@ -7,7 +7,10 @@ class ViewportFramebuffer : Framebuffer(null) {
     private var lastViewportSize: Vec2i? = null
     val size: Vec2i get() = lastViewportSize ?: throw IllegalStateException("ViewportFramebuffer is not resized yed")
 
-    fun resize(viewportSize: Vec2i) {
+    fun update(viewportSize: Vec2i) {
+        if (viewportSize.x <= 0 || viewportSize.y <= 0) return
+        if (lastViewportSize == viewportSize) return
+
         attachments.entries.forEach { (attachment, texture) ->
             val oldTexture = texture ?: return@forEach
 

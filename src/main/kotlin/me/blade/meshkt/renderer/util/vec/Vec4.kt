@@ -6,7 +6,7 @@ interface Vec4 {
     val z: Double
     val w: Double
 
-    private class Impl(
+    private data class Impl(
         override val x: Double,
         override val y: Double,
         override val z: Double,

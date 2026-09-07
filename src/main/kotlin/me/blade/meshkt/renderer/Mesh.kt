@@ -1,5 +1,6 @@
 package me.blade.meshkt.renderer
 
+import me.blade.meshkt.renderer.engine.MeshLineDispatcher
 import me.blade.meshkt.renderer.engine.MeshUIDispatcher
 import me.blade.meshkt.renderer.state.StateManager
 import me.blade.meshkt.renderer.threading.PullingStrategy
@@ -31,11 +32,17 @@ object Mesh {
     var blendColor by stateManager.blendColorState
     var colorMask by stateManager.colorMaskState
 
+    var cull by stateManager.cullState
+    var cullMode by stateManager.cullModeState
+    var frontFace by stateManager.frontFaceState
+
     val dispatcherUI = MeshUIDispatcher()
+    val dispatcherLines = MeshLineDispatcher()
 
     fun frameBegin() {
         executor.pollEvents()
-        dispatcherUI.fence()
+        dispatcherUI.reset()
+        dispatcherLines.reset()
     }
 
     fun setupState() =
@@ -53,10 +60,6 @@ object Mesh {
 
     fun memoryBarrier(barrierBitMask: Int) {
         glMemoryBarrier(barrierBitMask)
-    }
-
-    fun clear(mask: Int) {
-        glClear(mask)
     }
 
     fun render(

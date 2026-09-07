@@ -72,7 +72,7 @@ data class BlendFunc(
             BlendFactor.get(GL_BLEND_DST_ALPHA)
         )
 
-        val default = BlendFunc(
+        val CLASSIC = BlendFunc(
             BlendFactor.SrcAlpha,
             BlendFactor.OneMinusSrcAlpha,
             BlendFactor.One,

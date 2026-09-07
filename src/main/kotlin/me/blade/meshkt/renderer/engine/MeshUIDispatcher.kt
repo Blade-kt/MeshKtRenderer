@@ -12,8 +12,6 @@ import me.blade.meshkt.renderer.engine.descriptors.ITextDescriptor
 import me.blade.meshkt.renderer.engine.descriptors.RectDescriptor
 import me.blade.meshkt.renderer.engine.descriptors.ScissorData
 import me.blade.meshkt.renderer.objects.createShader
-import me.blade.meshkt.renderer.objects.shader.properties.ShaderType
-import me.blade.meshkt.renderer.objects.texture.properties.TextureSlot
 import me.blade.meshkt.renderer.util.Quad
 import me.blade.meshkt.renderer.util.packColorARGB
 import me.blade.meshkt.renderer.util.packVec2
@@ -25,17 +23,11 @@ import java.awt.Font
 import kotlin.math.min
 import kotlin.math.roundToInt
 
-class MeshUIDispatcher : IUIDispatcher {
+class MeshUIDispatcher {
     private val shader = createShader {
-        compileSource(ShaderType.Vertex) { resourceText("/me/blade/mesh/shaders/interface.vsh") }
-        compileSource(ShaderType.Fragment) { resourceText("/me/blade/mesh/shaders/interface.fsh") }
+        vertex(resourceText("/me/blade/mesh/shaders/ui.vsh"))
+        fragment(resourceText("/me/blade/mesh/shaders/ui.fsh"))
         link()
-
-        uniforms {
-            TextureSlot.entries.forEach { slot ->
-                sampler("u_TEXTURE${slot.unitIndex}", slot)
-            }
-        }
     }
 
     private val storage = shader.storage
@@ -83,7 +75,7 @@ class MeshUIDispatcher : IUIDispatcher {
      *
      * Model - 256
      */
-    override fun bindMatrix(type: MatrixType, matrix: Matrix4f) {
+    fun bindMatrix(type: MatrixType, matrix: Matrix4f) {
         when (type) {
             MatrixType.Projection -> projectionMatrixAllocator
             MatrixType.View -> viewMatrixAllocator
@@ -91,16 +83,16 @@ class MeshUIDispatcher : IUIDispatcher {
         }.bind(matrix)
     }
 
-    override fun createRectDescriptor(block: IRectDescriptor.() -> Unit) =
+    fun createRectDescriptor(block: IRectDescriptor.() -> Unit) =
         RectDescriptor().apply(block)
 
-    override fun rect(block: IRectDescriptor.() -> Unit) {
+    fun rect(block: IRectDescriptor.() -> Unit) {
         rectDescriptor.reset()
         block(rectDescriptor)
         rect(rectDescriptor)
     }
 
-    override fun rect(descriptor: IRectDescriptor) {
+    fun rect(descriptor: IRectDescriptor) {
         with(rectInstanceBuffer) {
             vec2(descriptor.pos1)
             vec2(descriptor.pos2)
@@ -127,16 +119,16 @@ class MeshUIDispatcher : IUIDispatcher {
         }
     }
 
-    override fun createTextDescriptor(block: ITextDescriptor.() -> Unit) =
+    fun createTextDescriptor(block: ITextDescriptor.() -> Unit) =
         TextDescriptor().apply(block)
 
-    override fun text(block: ITextDescriptor.() -> Unit) {
+    fun text(block: ITextDescriptor.() -> Unit) {
         textDescriptor.reset()
         block(textDescriptor)
         text(textDescriptor)
     }
 
-    override fun text(descriptor: ITextDescriptor) {
+    fun text(descriptor: ITextDescriptor) {
         val font = descriptor.font ?: defaultFont
         val glyphMap = fontAllocator.alloc(font)
 
@@ -173,13 +165,13 @@ class MeshUIDispatcher : IUIDispatcher {
         }
     }
 
-    override fun fontWidth(block: ITextDescriptor.() -> Unit): Double {
+    fun fontWidth(block: ITextDescriptor.() -> Unit): Double {
         textDescriptor.reset()
         block(textDescriptor)
         return fontWidth(textDescriptor)
     }
 
-    override fun fontWidth(descriptor: ITextDescriptor): Double {
+    fun fontWidth(descriptor: ITextDescriptor): Double {
         val font = descriptor.font ?: defaultFont
         val glyphMap = fontAllocator.alloc(font)
 
@@ -188,15 +180,11 @@ class MeshUIDispatcher : IUIDispatcher {
         }
     }
 
-    fun use(block: IUIDispatcher.() -> Unit) {
-        block(this)
-    }
-
-    override fun pushScissor(scissorData: ScissorData, clamp: Boolean) {
+    fun pushScissor(scissorData: ScissorData, clamp: Boolean = true) {
         scissorStack.push(scissorData, clamp)
     }
 
-    override fun popScissor() {
+    fun popScissor() {
         scissorStack.pop()
     }
 
@@ -232,13 +220,17 @@ class MeshUIDispatcher : IUIDispatcher {
         scissorIndexBuffer.reset()
     }
 
-    fun fence() {
+    fun reset() {
         projectionMatrixAllocator.reset()
         viewMatrixAllocator.reset()
         modelMatrixAllocator.reset()
         textureAllocator.reset()
         color4Allocator.reset()
         scissorStack.reset()
+    }
+
+    fun use(block: MeshUIDispatcher.() -> Unit) {
+        block(this)
     }
 
     private fun IRectDescriptor.packRoundRadius(): Int {
@@ -252,7 +244,6 @@ class MeshUIDispatcher : IUIDispatcher {
             roundRadiusLeftTop.coerceAtMost(maxRound).times(2).roundToInt().coerceIn(0..255),
         )
     }
-
 
     companion object {
         private const val INSTANCE_BUFFER_BITS = 4
