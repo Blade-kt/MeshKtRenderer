@@ -1,6 +1,7 @@
 package me.blade.meshkt
 
 import me.blade.meshkt.renderer.Mesh
+import me.blade.meshkt.renderer.engine.MatrixType
 import me.blade.meshkt.renderer.state.BlendFunc
 import me.blade.meshkt.renderer.util.vec.Vec2
 import org.joml.Matrix4f
@@ -45,11 +46,31 @@ object MeshExample {
         Mesh.blend = true
         Mesh.blendFunc = BlendFunc.CLASSIC
 
+        Mesh.ui.use {
+            bindMatrix(MatrixType.Projection, projection)
+
+            repeat(1000) {
+                rect {
+                    pos1 = Vec2.create(600, 10)
+                    pos2 = Vec2.create(900, 200)
+                    color(Color(255, 255, 255, 50))
+                }
+
+                text {
+                    content = "BladeCore"
+                    pos = Vec2.create(10, 200)
+                    height = 90.0
+
+                    color = Color(0, 255, 0, 50)
+                }
+            }
+        }
+
         Mesh.lines.projectionMatrix = projection
         Mesh.lines.line(Vec2.create(100, 100), Vec2.create(200, 300), Color(255, 255, 255), 1.0)
 
-        Mesh.lines.flush()
         Mesh.ui.flush()
+        Mesh.lines.flush()
         Mesh.revertState()
     }
 

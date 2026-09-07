@@ -180,8 +180,6 @@ class RenderThreadExecutor(
         private fun isGLFWAvailable() = runCatching {
             GLFW.glfwGetCurrentContext() != 0L
         }.getOrDefault(false)
-
-
     }
 }
 

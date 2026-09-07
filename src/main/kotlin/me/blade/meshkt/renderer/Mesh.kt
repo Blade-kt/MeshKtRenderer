@@ -37,7 +37,7 @@ object Mesh {
     var cullMode by stateManager.cullModeState
     var frontFace by stateManager.frontFaceState
 
-    val defaultFramebuffer = externalFramebuffer(0)
+    val defaultFramebufferAccess = externalFramebuffer(0)
 
     val ui = MeshUIDispatcher()
     val lines = MeshLineDispatcher()

@@ -5,7 +5,7 @@ import me.blade.meshkt.renderer.util.vec.Vec2i
 
 class ViewportFramebuffer : Framebuffer(null) {
     private var lastViewportSize: Vec2i? = null
-    val size: Vec2i get() = lastViewportSize ?: throw IllegalStateException("ViewportFramebuffer is not resized yed")
+    val size: Vec2i get() = lastViewportSize ?: throw IllegalStateException("ViewportFramebuffer is not resized yet")
 
     fun update(viewportSize: Vec2i) {
         if (viewportSize.x <= 0 || viewportSize.y <= 0) return

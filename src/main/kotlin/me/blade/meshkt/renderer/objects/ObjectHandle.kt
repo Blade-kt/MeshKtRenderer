@@ -3,7 +3,7 @@ package me.blade.meshkt.renderer.objects
 import me.blade.meshkt.renderer.util.IMeshResource
 
 abstract class ObjectHandle(
-    private val identifier: Int,
+    protected open val identifier: Int,
     protected val isExternal: Boolean,
 ) : IMeshResource {
     var isValid = true; private set
