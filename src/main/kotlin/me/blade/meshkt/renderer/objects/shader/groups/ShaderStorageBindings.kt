@@ -4,11 +4,9 @@ import me.blade.meshkt.renderer.objects.buffer.Buffer
 import me.blade.meshkt.renderer.objects.createBuffer
 import me.blade.meshkt.renderer.objects.shader.Shader
 import me.blade.meshkt.renderer.util.IMeshResource
-import org.lwjgl.opengl.GL30C
-import org.lwjgl.opengl.GL43C
+import org.lwjgl.opengl.GL43C.*
 
 class ShaderStorageBindings(private val shader: Shader) : IMeshResource {
-    private val appliedBindings = hashMapOf<Int, Buffer>()
     private val bindings = hashMapOf<Int, Buffer>()
 
     private var ssboIndex = 0
@@ -19,8 +17,8 @@ class ShaderStorageBindings(private val shader: Shader) : IMeshResource {
 
     private fun storageIndex(name: String) = ssboNameMap.getOrPut(name) {
         if (++ssboIndex >= 16) throw RuntimeException("Reached SSBO binding limit $ssboIndex")
-        val blockIndex = GL43C.glGetProgramResourceIndex(shader.id, GL43C.GL_SHADER_STORAGE_BLOCK, name)
-        GL43C.glShaderStorageBlockBinding(shader.id, blockIndex, ssboIndex)
+        val blockIndex = glGetProgramResourceIndex(shader.id, GL_SHADER_STORAGE_BLOCK, name)
+        glShaderStorageBlockBinding(shader.id, blockIndex, ssboIndex)
         ssboIndex
     }
 
@@ -44,9 +42,7 @@ class ShaderStorageBindings(private val shader: Shader) : IMeshResource {
 
     fun applyBindings() {
         bindings.forEach { (id, buffer) ->
-            if (appliedBindings[id] == buffer) return@forEach
-            GL30C.glBindBufferBase(GL43C.GL_SHADER_STORAGE_BUFFER, id, buffer.id)
-            appliedBindings[id] = buffer
+            glBindBufferBase(GL_SHADER_STORAGE_BUFFER, id, buffer.id)
         }
     }
 
