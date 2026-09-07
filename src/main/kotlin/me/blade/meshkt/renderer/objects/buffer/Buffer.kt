@@ -8,11 +8,7 @@ import me.blade.meshkt.renderer.util.vec.Vec3i
 import me.blade.meshkt.renderer.util.vec.Vec4
 import me.blade.meshkt.renderer.util.vec.Vec4i
 import org.joml.Matrix4f
-import org.lwjgl.opengl.GL15C.GL_DYNAMIC_DRAW
-import org.lwjgl.opengl.GL15C.glDeleteBuffers
-import org.lwjgl.opengl.GL45C.glCreateBuffers
-import org.lwjgl.opengl.GL45C.glNamedBufferData
-import org.lwjgl.opengl.GL45C.nglNamedBufferSubData
+import org.lwjgl.opengl.GL45C.*
 import org.lwjgl.system.MemoryUtil.*
 import kotlin.math.max
 

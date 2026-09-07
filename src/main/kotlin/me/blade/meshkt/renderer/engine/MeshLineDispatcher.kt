@@ -18,14 +18,20 @@ import java.awt.Color
 
 class MeshLineDispatcher {
     private val sdfShader = createShader {
-        vertex(resourceText("/me/blade/mesh/shaders/linesdf.vsh"))
-        fragment(resourceText("/me/blade/mesh/shaders/linesdf.fsh"))
+        vertex(resourceText("/me/blade/mesh/shaders/line/linesdf.vsh"))
+        fragment(resourceText("/me/blade/mesh/shaders/line/linesdf.fsh"))
         link()
     }
 
     private val blitShader = createShader {
-        vertex(resourceText("/me/blade/mesh/shaders/lineblit.vsh"))
-        fragment(resourceText("/me/blade/mesh/shaders/lineblit.fsh"))
+        vertex(resourceText("/me/blade/mesh/shaders/line/lineblit.vsh"))
+        fragment(resourceText("/me/blade/mesh/shaders/line/lineblit.fsh"))
+        link()
+    }
+
+    private val clearShader = createShader {
+        vertex(resourceText("/me/blade/mesh/shaders/line/lineblit.vsh"))
+        fragment(resourceText("/me/blade/mesh/shaders/line/lineclear.fsh"))
         link()
     }
 
@@ -81,16 +87,25 @@ class MeshLineDispatcher {
 
         lineBuffer.upload()
 
-        sdfFBO.clearAttachment(FramebufferAttachment.Color0)
-        sdfFBO.clearAttachment(FramebufferAttachment.Color1)
-        sdfFBO.clearAttachment(FramebufferAttachment.Depth)
+        // unsynchronized clean
+        sdfFBO.invalidateAttachments(
+            FramebufferAttachment.Color0,
+            FramebufferAttachment.Color1
+        )
+
+        sdfFBO.clearAttachments(FramebufferAttachment.Depth)
 
         sdfFBO.update(Vec2i.create(
             Mesh.viewport.z, Mesh.viewport.w
         ))
 
         rent(Mesh::writeFramebuffer, sdfFBO) {
-            rent(Mesh::blend, true) {
+            rent(Mesh::blend, false) {
+                // unsynchronized clean
+                Mesh.boundShader = clearShader
+                Mesh.render(1)
+
+                Mesh.blend = true
                 // TODO: State management for this shit
                 glBlendFunci(1, GL_ONE, GL_ONE)
                 glBlendEquationi(1, GL_MAX)

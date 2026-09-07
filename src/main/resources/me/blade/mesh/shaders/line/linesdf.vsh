@@ -1,7 +1,7 @@
 #version 460 core
 
 #define ONE_OVER_255 0.0039216
-#define EXTEND_PIXELS 16
+#define EXTEND_PIXELS (16 + 4)
 
 flat out vec2 s_RECT_POS1;
 flat out vec2 s_RECT_POS2;

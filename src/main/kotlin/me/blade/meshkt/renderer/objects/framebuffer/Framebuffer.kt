@@ -40,7 +40,15 @@ open class Framebuffer(externalId: Int?) : ObjectHandle(
         _clearStencil[0] = value
     }
 
-    fun clearAttachment(attachment: FramebufferAttachment) {
+    fun invalidateAttachments(vararg attachments: FramebufferAttachment) {
+        glInvalidateNamedFramebufferData(id, attachments.map { it.gl }.toIntArray())
+    }
+
+    fun clearAttachments(vararg attachments: FramebufferAttachment) {
+        attachments.forEach(::clearAttachment)
+    }
+
+    private fun clearAttachment(attachment: FramebufferAttachment) {
         when (attachment) {
             in FramebufferAttachment.Color0..FramebufferAttachment.Color31 -> {
                 val drawBuffer = attachment.ordinal - FramebufferAttachment.Color0.ordinal

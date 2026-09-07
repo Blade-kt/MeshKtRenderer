@@ -2,6 +2,7 @@ package me.blade.meshkt
 
 import me.blade.meshkt.renderer.Mesh
 import me.blade.meshkt.renderer.engine.MatrixType
+import me.blade.meshkt.renderer.engine.descriptors.ScissorData
 import me.blade.meshkt.renderer.state.BlendFunc
 import me.blade.meshkt.renderer.util.vec.Vec2
 import org.joml.Matrix4f
@@ -9,7 +10,6 @@ import org.lwjgl.glfw.GLFW.*
 import org.lwjgl.opengl.GL
 import org.lwjgl.opengl.GL11C.*
 import org.lwjgl.system.MemoryStack
-import java.awt.Color
 import java.nio.IntBuffer
 import kotlin.properties.Delegates
 
@@ -50,33 +50,16 @@ object MeshExample {
         Mesh.dispatcherUI.use {
             bindMatrix(MatrixType.Projection, projection)
 
+            pushScissor(ScissorData(Vec2.create(0, 300), Vec2.create(1000, 600)))
+
             text {
                 content = "Mesh"
-                pos = Vec2.create(100.0, 400.0)
-                height = 300.0
+                pos = Vec2.create(100.0, 500.0)
+                height = 400.0
             }
+
+            popScissor()
         }
-
-        Mesh.dispatcherLines.projectionMatrix = projection
-
-        Mesh.dispatcherLines.line(
-            Vec2.create(200, 50),
-            Vec2.create(200, 300),
-            Color.RED, 10000.0
-        )
-
-        Mesh.dispatcherLines.line(
-            Vec2.create(20, 250),
-            Vec2.create(300, 250),
-            Color.GREEN
-        )
-
-        Mesh.dispatcherLines.line(
-            Vec2.create(220, 70),
-            Vec2.create(40, 270),
-            Color.BLUE
-        )
-
         Mesh.dispatcherLines.flush()
         Mesh.dispatcherUI.flush()
         Mesh.revertState()

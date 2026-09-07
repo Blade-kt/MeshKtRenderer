@@ -47,7 +47,7 @@ compileKotlin.compilerOptions {
 
 tasks.jar {
     manifest {
-        attributes["Main-Class"] = "me.blade.meshkt.MeshRendererExample"
+        attributes["Main-Class"] = "me.blade.meshkt.MeshExample"
     }
 
     from({

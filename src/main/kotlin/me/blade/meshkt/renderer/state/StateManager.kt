@@ -49,8 +49,12 @@ class StateManager {
 
     var activeTextureState = TrackedState.createEnum<TextureSlot>(GL_ACTIVE_TEXTURE, ::glActiveTexture)
     private val prevBoundTextures = observableMap<TextureSlot, Int>()
+    private val actualBoundTextures = observableMap<TextureSlot, Int>()
     val boundTexture = observableMap<TextureSlot, Texture?> { slot, texture ->
-        glBindTextureUnit(slot.unitIndex, texture?.id ?: 0)
+        val id = texture?.id ?: 0
+        if (actualBoundTextures[slot] == id) return@observableMap
+        glBindTextureUnit(slot.unitIndex, id)
+        actualBoundTextures[slot] = id
     }
 
     var depthTestState = TrackedState.createToggleBoolean(GL_DEPTH_TEST)
@@ -94,7 +98,9 @@ class StateManager {
 
         TextureSlot.entries.forEach { slot ->
             activeTextureState.apply(slot)
-            prevBoundTextures[slot] = glGetInteger(GL_TEXTURE_BINDING_2D)
+            val bound = glGetInteger(GL_TEXTURE_BINDING_2D)
+            prevBoundTextures[slot] = bound
+            actualBoundTextures[slot] = bound
         }
 
         activeTextureState.apply(TextureSlot.Slot0)
@@ -108,6 +114,7 @@ class StateManager {
         }
         stateReady = false
         prevBoundTextures.entries.forEach { (slot, id) ->
+            if (actualBoundTextures[slot] == id) return@forEach
             activeTextureState.apply(slot)
             glBindTexture(GL_TEXTURE_2D, id!!)
         }
