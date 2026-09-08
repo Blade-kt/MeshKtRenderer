@@ -1,5 +1,6 @@
 #version 460 core
 
+#define MAX_WIDTH 16
 flat in vec2 s_RECT_POS1;
 flat in vec2 s_RECT_POS2;
 in vec2 s_FRAG_COORD;
@@ -16,7 +17,8 @@ void main() {
     vec2 closestPoint = s_RECT_POS1 + t * lineVec;
 
     float sdf = 1.0 - length(s_FRAG_COORD - closestPoint) / s_WIDTH;
-    float alpha = smoothstep(0.3, 0.7, sdf);
+    float normalizedWidth = clamp(s_WIDTH / MAX_WIDTH, 0.0, 1.0);
+    float alpha = smoothstep(mix(0.15, 0.45, normalizedWidth), mix(0.85, 0.55, normalizedWidth), sdf);
 
     COLOR_ATTACHMENT0 = s_COLOR * vec4(1.0, 1.0, 1.0, alpha);
 }

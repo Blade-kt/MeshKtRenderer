@@ -11,6 +11,7 @@ import org.lwjgl.opengl.GL11C.*
 import org.lwjgl.system.MemoryStack
 import java.awt.Color
 import java.nio.IntBuffer
+import kotlin.math.sin
 import kotlin.properties.Delegates
 
 object MeshExample {
@@ -46,28 +47,10 @@ object MeshExample {
         Mesh.blend = true
         Mesh.blendFunc = BlendFunc.CLASSIC
 
-        Mesh.ui.use {
-            bindMatrix(MatrixType.Projection, projection)
-
-            repeat(1000) {
-                rect {
-                    pos1 = Vec2.create(600, 10)
-                    pos2 = Vec2.create(900, 200)
-                    color(Color(255, 255, 255, 50))
-                }
-
-                text {
-                    content = "BladeCore"
-                    pos = Vec2.create(10, 200)
-                    height = 90.0
-
-                    color = Color(0, 255, 0, 50)
-                }
-            }
-        }
-
         Mesh.lines.projectionMatrix = projection
-        Mesh.lines.line(Vec2.create(100, 100), Vec2.create(200, 300), Color(255, 255, 255), 1.0)
+        repeat(16) { i ->
+            Mesh.lines.line(Vec2.create(40.0, 10.0 + i * 32), Vec2.create(140.0, 10.0 + i * 32), Color.WHITE, i.toDouble() + 1)
+        }
 
         Mesh.ui.flush()
         Mesh.lines.flush()

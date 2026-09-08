@@ -1,7 +1,8 @@
 #version 460 core
 
 #define ONE_OVER_255 0.0039216
-#define EXTEND_PIXELS (16 + 4)
+#define MAX_WIDTH 16
+#define EXTEND_PIXELS (MAX_WIDTH + 4)
 
 flat out vec2 s_RECT_POS1;
 flat out vec2 s_RECT_POS2;
@@ -56,8 +57,8 @@ void main() {
 
     vec2 mappedPos = mix(p1 - EXTEND_PIXELS, p2 + EXTEND_PIXELS, uv01);
 
-    s_RECT_POS1 = lineInstance.pos1;
-    s_RECT_POS2 = lineInstance.pos2;
+    s_RECT_POS1 = p1;
+    s_RECT_POS2 = p2;
     s_FRAG_COORD = mappedPos;
     s_COLOR = unpackColorARGB(lineInstance.packedColor);
     s_WIDTH = lineInstance.width * 2;

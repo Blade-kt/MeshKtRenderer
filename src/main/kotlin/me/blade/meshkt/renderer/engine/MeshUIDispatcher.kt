@@ -129,6 +129,10 @@ class MeshUIDispatcher {
     }
 
     fun text(descriptor: ITextDescriptor) {
+        val height = descriptor.height ?: error("ITextDescriptor.height is null")
+        val content = descriptor.content ?: error("ITextDescriptor.content is null")
+        val pos = descriptor.pos ?: error("ITextDescriptor.pos is null")
+
         val font = descriptor.font ?: defaultFont
         val glyphMap = fontAllocator.alloc(font)
 
@@ -139,11 +143,11 @@ class MeshUIDispatcher {
             // TODO: on-fly glyph map generator for unlimited character support
             // (and this actually should be per-char)
             int(textureAllocator.alloc(glyphMap.texture))
-            float(descriptor.height)
+            float(height)
         }
 
         var xOffset = 0.0
-        descriptor.content.forEach { char ->
+        content.forEach { char ->
             val glyph = glyphMap.charDataOf(char)
 
             scissorIndexBuffer.int(scissorStack.activeScissorSlot)
@@ -157,10 +161,10 @@ class MeshUIDispatcher {
             }
 
             with(charInstanceBuffer) {
-                vec2(descriptor.pos.x + xOffset, descriptor.pos.y)
+                vec2(pos.x + xOffset, pos.y)
                 int(stringIndex)
                 int(glyph.index)
-                xOffset += glyph.getCharWidth(descriptor.height)
+                xOffset += glyph.getCharWidth(height)
             }
         }
     }
@@ -172,11 +176,14 @@ class MeshUIDispatcher {
     }
 
     fun fontWidth(descriptor: ITextDescriptor): Double {
+        val height = descriptor.height ?: error("ITextDescriptor.height is null")
+        val content = descriptor.content ?: error("ITextDescriptor.content is null")
+
         val font = descriptor.font ?: defaultFont
         val glyphMap = fontAllocator.alloc(font)
 
-        return descriptor.content.sumOf {
-            glyphMap.charDataOf(it).getCharWidth(descriptor.height)
+        return content.sumOf {
+            glyphMap.charDataOf(it).getCharWidth(height)
         }
     }
 

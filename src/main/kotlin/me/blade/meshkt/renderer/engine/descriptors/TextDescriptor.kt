@@ -6,9 +6,9 @@ import java.awt.Font
 
 interface ITextDescriptor {
     var font: Font?
-    var pos: Vec2
-    var height: Double
-    var content: String
+    var pos: Vec2?
+    var height: Double?
+    var content: String?
     var color: Color
 
     fun reset()
@@ -16,14 +16,16 @@ interface ITextDescriptor {
 
 class TextDescriptor : ITextDescriptor {
     override var font = null as Font?
-    override var pos = Vec2.ZERO
-    override var height = 0.0
-    override var content = ""
+    override var pos = null as Vec2?
+    override var height = null as Double?
+    override var content = null as String?
     override var color = Color.WHITE!!
 
     override fun reset() {
-        pos = Vec2.ZERO
-        height = 0.0
-        content = ""
+        font = null
+        pos = null
+        height = null
+        content = null
+        color = Color.WHITE!!
     }
 }
