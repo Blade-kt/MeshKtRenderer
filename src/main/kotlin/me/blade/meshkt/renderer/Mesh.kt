@@ -51,6 +51,10 @@ object Mesh {
         signalInternal(renderer)
     }
 
+    fun flushRemaining() {
+        signalInternal(null)
+    }
+
     private fun signalInternal(renderer: IRenderer?) {
         if (renderer != null) {
             instanceCount++
@@ -61,10 +65,6 @@ object Mesh {
         activeRenderer = renderer
 
         prevRenderer?.flush()
-    }
-
-    fun flushRemaining() {
-        signalInternal(null)
     }
 
     fun frameBegin() {

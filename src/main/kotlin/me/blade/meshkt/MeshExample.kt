@@ -5,12 +5,22 @@ import me.blade.meshkt.renderer.engine.MatrixType
 import me.blade.meshkt.renderer.engine.MeshLines
 import me.blade.meshkt.renderer.engine.MeshUI
 import me.blade.meshkt.renderer.engine.font.buildGlyphMap
+import me.blade.meshkt.renderer.objects.createTexture
+import me.blade.meshkt.renderer.objects.createViewportFramebuffer
+import me.blade.meshkt.renderer.objects.framebuffer.properties.FramebufferAttachment
+import me.blade.meshkt.renderer.objects.texture.properties.TextureInternalFormat
+import me.blade.meshkt.renderer.objects.texture.properties.TextureMagFilter
 import me.blade.meshkt.renderer.state.BlendFunc
+import me.blade.meshkt.renderer.util.Quad
+import me.blade.meshkt.renderer.util.rent
 import me.blade.meshkt.renderer.util.vec.Vec2
+import me.blade.meshkt.renderer.util.vec.Vec2i
+import me.blade.meshkt.renderer.util.vec.Vec4i
 import org.joml.Matrix4f
 import org.lwjgl.glfw.GLFW.*
 import org.lwjgl.opengl.GL
 import org.lwjgl.opengl.GL11C.*
+import org.lwjgl.opengl.GL43C.GL_MAX_COMPUTE_SHARED_MEMORY_SIZE
 import org.lwjgl.system.MemoryStack
 import java.awt.Color
 import java.awt.Font
@@ -27,6 +37,16 @@ object MeshExample {
         mainEntry()
     }
 
+    val fbo by lazy {
+        createViewportFramebuffer {
+            attachments[FramebufferAttachment.Color0] = createTexture {
+                storage.internalFormat = TextureInternalFormat.RGBA8
+            }
+
+            drawTargets = arrayOf(FramebufferAttachment.Color0)
+        }
+    }
+
     fun frame() {
         val projection = Matrix4f().ortho(
             0f, viewportWidth.toFloat(),
@@ -37,6 +57,12 @@ object MeshExample {
         Mesh.frameBegin()
         Mesh.setupState()
 
+        val viewport0 = Vec2i.create(viewportWidth, viewportHeight)
+        val viewport1 = Vec2i.create(viewportWidth * 2, viewportHeight * 2)
+        fbo.update(viewport1)
+        fbo.clearAttachments(FramebufferAttachment.Color0)
+        Mesh.viewport = Vec4i.create(0, 0, viewport1.x, viewport1.y)
+
         Mesh.blend = true
         Mesh.blendFunc = BlendFunc.CLASSIC
 
@@ -46,28 +72,31 @@ object MeshExample {
         MeshUI.bindMatrix(MatrixType.Projection, projection)
         MeshLines.projectionMatrix = projection
 
-        var y = 0.0
-        repeat(1000) {
-            val size = (it + 3) * 5.0
+        rent(Mesh::writeFramebuffer, fbo) {
+            var y = 0.0
+            repeat(20) {
+                val size = (it + 1) * 3.0
 
-            MeshUI.text {
-                content = "Height: $size"
-                pos = Vec2.create(10.0, 10.0 + y)
-                height = size
-            }
+                MeshUI.text {
+                    content = "Height: $size"
+                    pos = Vec2.create(10.0, 10.0 + y)
+                    height = size
+                }
 
-            MeshUI.text {
-                content = "Height: $size"
-                pos = Vec2.create(10.0, 10.0 + y)
-                height = size
+                y += size + 10.0
             }
 
             Mesh.flushRemaining()
-
-            y += size + 10.0
         }
 
-        Mesh.flushRemaining()
+        Mesh.viewport = Vec4i.create(0, 0, viewport0.x, viewport0.y)
+        fbo.blitTo(
+            null,
+            srcWidth = viewport1.x, srcHeight = viewport1.y,
+            dstWidth = viewport0.x, dstHeight = viewport0.y,
+            filter = TextureMagFilter.Linear
+        )
+
         Mesh.revertState()
     }
 
