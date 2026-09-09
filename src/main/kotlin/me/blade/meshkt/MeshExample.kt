@@ -2,6 +2,8 @@ package me.blade.meshkt
 
 import me.blade.meshkt.renderer.Mesh
 import me.blade.meshkt.renderer.engine.MatrixType
+import me.blade.meshkt.renderer.engine.MeshLines
+import me.blade.meshkt.renderer.engine.MeshUI
 import me.blade.meshkt.renderer.state.BlendFunc
 import me.blade.meshkt.renderer.util.vec.Vec2
 import org.joml.Matrix4f
@@ -47,13 +49,31 @@ object MeshExample {
         Mesh.blend = true
         Mesh.blendFunc = BlendFunc.CLASSIC
 
-        Mesh.lines.projectionMatrix = projection
-        repeat(16) { i ->
-            Mesh.lines.line(Vec2.create(40.0, 10.0 + i * 32), Vec2.create(140.0, 10.0 + i * 32), Color.WHITE, i.toDouble() + 1)
+        MeshUI.reset()
+        MeshLines.reset()
+
+        MeshUI.bindMatrix(MatrixType.Projection, projection)
+        MeshLines.projectionMatrix = projection
+
+        /*MeshUI.rect {
+            pos1 = Vec2.create(10, 10)
+            pos2 = Vec2.create(200, 100)
+        }*/
+
+        var y = 0.0
+        repeat(10) {
+            val size = (it + 1) * 10.0 + 5
+
+            MeshUI.text {
+                content = "Height: $size"
+                pos = Vec2.create(10.0, 10.0 + y)
+                height = size
+                y += size + 10.0
+            }
         }
 
-        Mesh.ui.flush()
-        Mesh.lines.flush()
+        MeshUI.flush()
+        MeshLines.flush()
         Mesh.revertState()
     }
 

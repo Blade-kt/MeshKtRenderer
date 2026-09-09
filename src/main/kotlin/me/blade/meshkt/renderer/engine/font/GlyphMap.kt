@@ -7,7 +7,7 @@ import java.awt.FontMetrics
 import java.awt.image.BufferedImage
 import kotlin.collections.forEach
 
-const val FONT_SIZE = 512f
+const val FONT_SIZE = 256f
 const val CHAR_STEP = 32
 
 private val supportedCharacters = buildString {

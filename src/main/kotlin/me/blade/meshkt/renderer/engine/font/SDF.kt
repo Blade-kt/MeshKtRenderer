@@ -15,8 +15,8 @@ import me.blade.meshkt.renderer.util.vec.Vec4i
 import org.joml.Matrix4f
 import java.awt.image.BufferedImage
 
-const val SDF_DOWNSCALE = 4
-const val SDF_SCAN = 8
+const val SDF_DOWNSCALE = 8
+const val SDF_SCAN = 16
 
 fun sdf(image: BufferedImage): Texture = Mesh.ensureStateSetup {
     val srcWidth = image.width
@@ -57,9 +57,11 @@ fun sdf(image: BufferedImage): Texture = Mesh.ensureStateSetup {
             width = dstWidth
             height = dstHeight
 
-            internalFormat = TextureInternalFormat.RGBA16F
+            internalFormat = TextureInternalFormat.R8
             allocate()
         }
+
+        mipmap.generate()
     }
 
     val framebuffer = createFramebuffer {
@@ -96,6 +98,8 @@ fun sdf(image: BufferedImage): Texture = Mesh.ensureStateSetup {
     inputTexture.free()
     framebuffer.free()
     shader.free()
+
+    outputTexture.mipmap.generate()
 
     return@ensureStateSetup outputTexture
 }

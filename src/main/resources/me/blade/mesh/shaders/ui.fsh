@@ -3,22 +3,23 @@
 
 #define RECT_BUFFER_INDEX 0
 #define CHAR_BUFFER_INDEX 1
+#define SMOOTHING_BIAS 20
 
 struct ScissorData {
     vec2 pos1;
     vec2 pos2;
 };
 
-uniform sampler2D u_TEXTURE0;
-
 flat in int s_DRAW_BUFFER_INDEX;
 flat in int s_TEXTURE_INDEX;
+flat in vec4 s_ROUND_RADIUS;
+flat in vec2 s_RECT_SIZE;
+flat in ScissorData s_SCISSOR_DATA;
+flat in float s_FONT_HEIGHT;
+
 in vec2 s_INSTANCE_UV;
 in vec2 s_SAMPLER_UV;
 in vec4 s_VERTEX_COLOR;
-in vec4 s_ROUND_RADIUS;
-in vec2 s_RECT_SIZE;
-in ScissorData s_SCISSOR_DATA;
 in vec2 s_RAW_POSITION;
 
 out layout(location = 0) vec4 COLOR_ATTACHMENT0;
@@ -34,6 +35,10 @@ vec4 scissorCut() {
     vec2 d = abs(s_RAW_POSITION.xy - center) - half_size;
     float sdf = length(max(d, 0.0)) + min(max(d.x, d.y), 0.0);
     return vec4(1.0, 1.0, 1.0, 1.0 - smoothstep(0.0, 1.0, sdf));
+}
+
+float linearstep(float edge0, float edge1, float x) {
+    return clamp((x - edge0) / (edge1 - edge0), 0.0, 1.0);
 }
 
 void main() {
@@ -61,9 +66,9 @@ void main() {
     }
 
     if (s_DRAW_BUFFER_INDEX == CHAR_BUFFER_INDEX) {
-        float sdf = textureColor.r;
-        float smoothness = fwidth(sdf);
-        float alpha = smoothstep(0.5 - smoothness, 0.5 + smoothness, sdf);
+        float sdf = textureColor.r * 2 - 1;
+        float smoothness = 1.0 - linearstep(0.0, s_FONT_HEIGHT + SMOOTHING_BIAS, s_FONT_HEIGHT);
+        float alpha = linearstep(-smoothness, smoothness, sdf);
         vec4 fontColor = vec4(1.0, 1.0, 1.0, alpha);
         COLOR_ATTACHMENT0 = s_VERTEX_COLOR * fontColor * scissor;
     }

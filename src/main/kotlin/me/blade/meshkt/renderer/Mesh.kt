@@ -1,7 +1,5 @@
 package me.blade.meshkt.renderer
 
-import me.blade.meshkt.renderer.engine.MeshLineDispatcher
-import me.blade.meshkt.renderer.engine.MeshUIDispatcher
 import me.blade.meshkt.renderer.objects.externalFramebuffer
 import me.blade.meshkt.renderer.state.StateManager
 import me.blade.meshkt.renderer.threading.PullingStrategy
@@ -39,13 +37,8 @@ object Mesh {
 
     val defaultFramebufferAccess = externalFramebuffer(0)
 
-    val ui = MeshUIDispatcher()
-    val lines = MeshLineDispatcher()
-
     fun frameBegin() {
         executor.pollEvents()
-        ui.reset()
-        lines.reset()
     }
 
     fun setupState() =

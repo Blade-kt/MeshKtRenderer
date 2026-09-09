@@ -23,7 +23,12 @@ import java.awt.Font
 import kotlin.math.min
 import kotlin.math.roundToInt
 
-class MeshUIDispatcher {
+object MeshUI {
+    private const val INSTANCE_BUFFER_BITS = 4
+    private const val INSTANCE_POINTER_BITS = 28
+    private const val RECT_BUFFER_INDEX = 0
+    private const val CHAR_BUFFER_INDEX = 1
+
     private val shader = createShader {
         vertex(resourceText("/me/blade/mesh/shaders/ui.vsh"))
         fragment(resourceText("/me/blade/mesh/shaders/ui.fsh"))
@@ -34,22 +39,24 @@ class MeshUIDispatcher {
 
     private val scissorStack = ScissorStack(storage.allocate("ScissorDataBuffer"))
     private val scissorIndexBuffer = storage.allocate("ScissorIndexBuffer")
+    private val textureAllocator = TextureAllocator(storage.allocate("TextureHandleBuffer"))
 
     private val instanceBuffer = storage.allocate("InstanceBuffer")
-    private val textureAllocator = TextureAllocator(storage.allocate("TextureHandleBuffer"))
+    private var rectInstanceCount = 0
+    private var charInstanceCount = 0
 
     /* Rect */
     private val rectDescriptor = RectDescriptor()
     private val color4Allocator = Color4Allocator(storage.allocate("ColorBuffer"))
-    private var rectInstanceCount = 0
     private val rectInstanceBuffer = storage.allocate("RectInstanceBuffer")
 
     /* Font */
     var defaultFont = Font("SansSerif", Font.PLAIN, 12)
+    var defaultTextHeight = 20.0
     private val textDescriptor = TextDescriptor()
     private var stringInstanceCount = 0
-    private var charInstanceCount = 0
-    private val fontAllocator = FontAllocator(storage.allocate("GlyphBuffer"))
+
+    private val glyphAllocator = FontAllocator(storage.allocate("GlyphBuffer"))
     private val stringInstanceBuffer = storage.allocate("StringInstanceBuffer")
     private val charInstanceBuffer = storage.allocate("CharInstanceBuffer")
 
@@ -108,15 +115,7 @@ class MeshUIDispatcher {
         }
 
         scissorIndexBuffer.int(scissorStack.activeScissorSlot)
-
-        with(instanceBuffer) {
-            int(packVec2(
-                INSTANCE_BUFFER_BITS,
-                INSTANCE_POINTER_BITS,
-                RECT_BUFFER_INDEX,
-                rectInstanceCount++
-            ))
-        }
+        putInstancePointer(RECT_BUFFER_INDEX)
     }
 
     fun createTextDescriptor(block: ITextDescriptor.() -> Unit) =
@@ -129,12 +128,12 @@ class MeshUIDispatcher {
     }
 
     fun text(descriptor: ITextDescriptor) {
-        val height = descriptor.height ?: error("ITextDescriptor.height is null")
+        val height = descriptor.height ?: defaultTextHeight
         val content = descriptor.content ?: error("ITextDescriptor.content is null")
         val pos = descriptor.pos ?: error("ITextDescriptor.pos is null")
 
         val font = descriptor.font ?: defaultFont
-        val glyphMap = fontAllocator.alloc(font)
+        val glyphMap = glyphAllocator.alloc(font)
 
         val stringIndex = stringInstanceCount++
         with(stringInstanceBuffer) {
@@ -151,14 +150,7 @@ class MeshUIDispatcher {
             val glyph = glyphMap.charDataOf(char)
 
             scissorIndexBuffer.int(scissorStack.activeScissorSlot)
-            with(instanceBuffer) {
-                int(packVec2(
-                    INSTANCE_BUFFER_BITS,
-                    INSTANCE_POINTER_BITS,
-                    CHAR_BUFFER_INDEX,
-                    charInstanceCount++
-                ))
-            }
+            putInstancePointer(CHAR_BUFFER_INDEX)
 
             with(charInstanceBuffer) {
                 vec2(pos.x + xOffset, pos.y)
@@ -169,6 +161,25 @@ class MeshUIDispatcher {
         }
     }
 
+    private fun putInstancePointer(bufferIndex: Int) {
+        with(instanceBuffer) {
+            int(packVec2(
+                INSTANCE_BUFFER_BITS,
+                INSTANCE_POINTER_BITS,
+                bufferIndex,
+                when (bufferIndex) {
+                    RECT_BUFFER_INDEX -> {
+                        rectInstanceCount++
+                    }
+                    CHAR_BUFFER_INDEX -> {
+                        charInstanceCount++
+                    }
+                    else -> error("Invalid instance")
+                }
+            ))
+        }
+    }
+
     fun fontWidth(block: ITextDescriptor.() -> Unit): Double {
         textDescriptor.reset()
         block(textDescriptor)
@@ -176,11 +187,11 @@ class MeshUIDispatcher {
     }
 
     fun fontWidth(descriptor: ITextDescriptor): Double {
-        val height = descriptor.height ?: error("ITextDescriptor.height is null")
+        val height = descriptor.height ?: defaultTextHeight
         val content = descriptor.content ?: error("ITextDescriptor.content is null")
 
         val font = descriptor.font ?: defaultFont
-        val glyphMap = fontAllocator.alloc(font)
+        val glyphMap = glyphAllocator.alloc(font)
 
         return content.sumOf {
             glyphMap.charDataOf(it).getCharWidth(height)
@@ -202,7 +213,7 @@ class MeshUIDispatcher {
 
         color4Allocator.flush()
         textureAllocator.flush()
-        fontAllocator.flush()
+        glyphAllocator.flush()
 
         scissorStack.flush()
         scissorIndexBuffer.upload()
@@ -216,15 +227,16 @@ class MeshUIDispatcher {
         shader.uniforms.float("u_FONT_DIM_SIZE", 2048.0)
         Mesh.render(rectInstanceCount + charInstanceCount)
 
-        rectInstanceCount = 0
-        stringInstanceCount = 0
-        charInstanceCount = 0
-
         instanceBuffer.reset()
+        scissorIndexBuffer.reset()
+
         rectInstanceBuffer.reset()
         stringInstanceBuffer.reset()
         charInstanceBuffer.reset()
-        scissorIndexBuffer.reset()
+
+        rectInstanceCount = 0
+        stringInstanceCount = 0
+        charInstanceCount = 0
     }
 
     fun reset() {
@@ -234,10 +246,6 @@ class MeshUIDispatcher {
         textureAllocator.reset()
         color4Allocator.reset()
         scissorStack.reset()
-    }
-
-    fun use(block: MeshUIDispatcher.() -> Unit) {
-        block(this)
     }
 
     private fun IRectDescriptor.packRoundRadius(): Int {
@@ -250,12 +258,5 @@ class MeshUIDispatcher {
             roundRadiusLeftBottom.coerceAtMost(maxRound).times(2).roundToInt().coerceIn(0..255),
             roundRadiusLeftTop.coerceAtMost(maxRound).times(2).roundToInt().coerceIn(0..255),
         )
-    }
-
-    companion object {
-        private const val INSTANCE_BUFFER_BITS = 4
-        private const val INSTANCE_POINTER_BITS = 28
-        private const val RECT_BUFFER_INDEX = 0
-        private const val CHAR_BUFFER_INDEX = 1
     }
 }

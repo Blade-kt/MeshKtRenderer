@@ -14,12 +14,14 @@ uniform float u_FONT_DIM_SIZE;
 
 flat out int s_DRAW_BUFFER_INDEX;
 flat out int s_TEXTURE_INDEX;
+flat out vec4 s_ROUND_RADIUS;
+flat out vec2 s_RECT_SIZE;
+flat out ScissorData s_SCISSOR_DATA;
+flat out float s_FONT_HEIGHT;
+
 out vec2 s_INSTANCE_UV;
 out vec2 s_SAMPLER_UV;
 out vec4 s_VERTEX_COLOR;
-out vec4 s_ROUND_RADIUS;
-out vec2 s_RECT_SIZE;
-out ScissorData s_SCISSOR_DATA;
 out vec2 s_RAW_POSITION;
 
 struct ColorData {
@@ -181,6 +183,7 @@ void _CHAR(CharInstance charInstance, vec2 uv01) {
     s_VERTEX_COLOR = unpackColorARGB(stringInstance.packedColorARGB);
     s_TEXTURE_INDEX = stringInstance.textureIndex;
     s_RECT_SIZE = size;
+    s_FONT_HEIGHT = stringInstance.height;
 
     float extend = CHAR_EXTEND * (stringInstance.height / u_FONT_DIM_SIZE);
     vec2 texelSize = vec2(1.0) / size;

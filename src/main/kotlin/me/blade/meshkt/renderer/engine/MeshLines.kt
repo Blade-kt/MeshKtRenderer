@@ -8,7 +8,7 @@ import me.blade.meshkt.renderer.util.vec.Vec2
 import org.joml.Matrix4f
 import java.awt.Color
 
-class MeshLineDispatcher {
+object MeshLines {
     private val sdfShader = createShader {
         vertex(resourceText("/me/blade/mesh/shaders/line.vsh"))
         fragment(resourceText("/me/blade/mesh/shaders/line.fsh"))
@@ -51,9 +51,5 @@ class MeshLineDispatcher {
 
     fun reset() {
         lineBuffer.reset()
-    }
-
-    fun use(block: MeshLineDispatcher.() -> Unit) {
-        block(this)
     }
 }
