@@ -8,7 +8,7 @@ import me.blade.meshkt.renderer.util.vec.Vec2
 import org.joml.Matrix4f
 import java.awt.Color
 
-object MeshLines {
+object MeshLines : IRenderer {
     private val sdfShader = createShader {
         vertex(resourceText("/me/blade/mesh/shaders/line.vsh"))
         fragment(resourceText("/me/blade/mesh/shaders/line.fsh"))
@@ -26,6 +26,7 @@ object MeshLines {
     private var instanceCount = 0
 
     fun line(pos1: Vec2, pos2: Vec2, color: Color, width: Double = 1.0) {
+        Mesh.signal(this)
         lineBuffer.vec4(pos1.x, pos1.y, pos2.x, pos2.y)
         lineBuffer.int(packColorARGB(color))
         lineBuffer.float(width.coerceIn(1.0..16.0))
@@ -33,7 +34,7 @@ object MeshLines {
         instanceCount++
     }
 
-    fun flush() {
+    override fun flush() {
         matrixBuffer.apply {
             reset()
             mat4(projectionMatrix)
@@ -43,13 +44,11 @@ object MeshLines {
         }
 
         lineBuffer.upload()
-
-        Mesh.boundShader = sdfShader
-        Mesh.render(instanceCount)
+        Mesh.render(sdfShader, instanceCount)
         instanceCount = 0
     }
 
-    fun reset() {
+    override fun reset() {
         lineBuffer.reset()
     }
 }

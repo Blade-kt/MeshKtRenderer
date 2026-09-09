@@ -23,7 +23,7 @@ import java.awt.Font
 import kotlin.math.min
 import kotlin.math.roundToInt
 
-object MeshUI {
+object MeshUI : IRenderer {
     private const val INSTANCE_BUFFER_BITS = 4
     private const val INSTANCE_POINTER_BITS = 28
     private const val RECT_BUFFER_INDEX = 0
@@ -100,6 +100,7 @@ object MeshUI {
     }
 
     fun rect(descriptor: IRectDescriptor) {
+        Mesh.signal(this)
         with(rectInstanceBuffer) {
             vec2(descriptor.pos1)
             vec2(descriptor.pos2)
@@ -128,6 +129,7 @@ object MeshUI {
     }
 
     fun text(descriptor: ITextDescriptor) {
+        Mesh.signal(this)
         val height = descriptor.height ?: defaultTextHeight
         val content = descriptor.content ?: error("ITextDescriptor.content is null")
         val pos = descriptor.pos ?: error("ITextDescriptor.pos is null")
@@ -206,7 +208,7 @@ object MeshUI {
         scissorStack.pop()
     }
 
-    fun flush() {
+    override fun flush() {
         projectionMatrixAllocator.flush()
         viewMatrixAllocator.flush()
         modelMatrixAllocator.flush()
@@ -223,9 +225,8 @@ object MeshUI {
         stringInstanceBuffer.upload()
         charInstanceBuffer.upload()
 
-        Mesh.boundShader = shader
         shader.uniforms.float("u_FONT_DIM_SIZE", 2048.0)
-        Mesh.render(rectInstanceCount + charInstanceCount)
+        Mesh.render(shader, rectInstanceCount + charInstanceCount)
 
         instanceBuffer.reset()
         scissorIndexBuffer.reset()
@@ -239,7 +240,7 @@ object MeshUI {
         charInstanceCount = 0
     }
 
-    fun reset() {
+    override fun reset() {
         projectionMatrixAllocator.reset()
         viewMatrixAllocator.reset()
         modelMatrixAllocator.reset()

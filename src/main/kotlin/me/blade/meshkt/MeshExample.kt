@@ -12,6 +12,7 @@ import org.lwjgl.glfw.GLFW.*
 import org.lwjgl.opengl.GL
 import org.lwjgl.opengl.GL11C.*
 import org.lwjgl.system.MemoryStack
+import java.awt.Color
 import java.awt.Font
 import java.nio.IntBuffer
 import kotlin.properties.Delegates
@@ -26,17 +27,7 @@ object MeshExample {
         mainEntry()
     }
 
-    private var lastPrint = 0L
-    private val time get() = System.currentTimeMillis()
-    private var frames = 0
     fun frame() {
-        if (time - lastPrint > 1000L) {
-            lastPrint = time
-            println(frames)
-            frames = 0
-        }
-        frames++
-
         val projection = Matrix4f().ortho(
             0f, viewportWidth.toFloat(),
             viewportHeight.toFloat(), 0f,
@@ -55,34 +46,28 @@ object MeshExample {
         MeshUI.bindMatrix(MatrixType.Projection, projection)
         MeshLines.projectionMatrix = projection
 
-        MeshUI.rect {
-            pos1 = Vec2.create(10, 10)
-            pos2 = Vec2.create(200, 100)
-            texture = buildGlyphMap(Font("Arial", Font.BOLD, 12)).texture
-            radius(10.0)
-        }
-
-        /*var y = 0.0
-        repeat(10) {
-            val size = (it + 1) * 10.0 + 5
+        var y = 0.0
+        repeat(1000) {
+            val size = (it + 3) * 5.0
 
             MeshUI.text {
                 content = "Height: $size"
                 pos = Vec2.create(10.0, 10.0 + y)
                 height = size
-                y += size + 10.0
             }
-        }*/
 
-        /*var y0 = 0.0
-        repeat(16) {
-            val width = it.toDouble()
-            MeshLines.line(Vec2.create(30.0, 10.0 + y0), Vec2.create(200.0, 10.0 + y0 + 50), Color.WHITE, width)
-            y0 += width * 2 + 5
-        }*/
+            MeshUI.text {
+                content = "Height: $size"
+                pos = Vec2.create(10.0, 10.0 + y)
+                height = size
+            }
 
-        MeshUI.flush()
-        MeshLines.flush()
+            Mesh.flushRemaining()
+
+            y += size + 10.0
+        }
+
+        Mesh.flushRemaining()
         Mesh.revertState()
     }
 

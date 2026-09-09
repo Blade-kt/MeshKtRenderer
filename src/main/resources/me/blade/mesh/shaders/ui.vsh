@@ -175,10 +175,9 @@ void _CHAR(CharInstance charInstance, vec2 uv01) {
     float aspectRatio = uvSize.x / uvSize.y;
     float charWidth = stringInstance.height * aspectRatio;
 
-    vec2 pos = charInstance.position;
-    vec2 pos1 = pos - vec2(0.0, stringInstance.height);
-    vec2 pos2 = pos + vec2(charWidth, 0.0);
-    vec2 size = pos2 - pos1;
+    vec2 size = vec2(charWidth, stringInstance.height);
+    vec2 pos1 = charInstance.position;
+    vec2 pos2 = charInstance.position + size;
 
     s_VERTEX_COLOR = unpackColorARGB(stringInstance.packedColorARGB);
     s_TEXTURE_INDEX = stringInstance.textureIndex;

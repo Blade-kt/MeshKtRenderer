@@ -1,6 +1,9 @@
 package me.blade.meshkt.renderer
 
+import me.blade.meshkt.renderer.engine.IRenderer
+import me.blade.meshkt.renderer.objects.createShader
 import me.blade.meshkt.renderer.objects.externalFramebuffer
+import me.blade.meshkt.renderer.objects.shader.Shader
 import me.blade.meshkt.renderer.state.StateManager
 import me.blade.meshkt.renderer.threading.PullingStrategy
 import me.blade.meshkt.renderer.threading.RenderThreadExecutor
@@ -37,8 +40,46 @@ object Mesh {
 
     val defaultFramebufferAccess = externalFramebuffer(0)
 
+    private var activeRenderer: IRenderer? = null
+    private var vertexCount = 0
+    private var instanceCount = 0
+    private var drawCallCount = 0
+    private var frames = 0
+    private var lastFramePrint = 0L
+
+    fun signal(renderer: IRenderer) {
+        signalInternal(renderer)
+    }
+
+    private fun signalInternal(renderer: IRenderer?) {
+        if (renderer != null) {
+            instanceCount++
+        }
+
+        if (activeRenderer == renderer) return
+        val prevRenderer = activeRenderer
+        activeRenderer = renderer
+
+        prevRenderer?.flush()
+    }
+
+    fun flushRemaining() {
+        signalInternal(null)
+    }
+
     fun frameBegin() {
         executor.pollEvents()
+        frames++
+
+        val time = System.currentTimeMillis()
+        if (time - lastFramePrint > 500L) {
+            lastFramePrint = time
+            println("Vertices: $vertexCount. Instances: $instanceCount. Draw calls: $drawCallCount. FPS: ${frames * 2}.")
+            frames = 0
+        }
+        vertexCount = 0
+        instanceCount = 0
+        drawCallCount = 0
     }
 
     fun setupState() =
@@ -59,15 +100,19 @@ object Mesh {
     }
 
     fun render(
+        shader: Shader,
         instanceCount: Int,
         instanceSize: Int = 6
     ) {
         stateManager.validate()
-        val shader = boundShader ?: throw IllegalStateException("Shader is not set")
+
+        boundShader = shader
         shader.storage.applyBindings()
 
         val vertexCount = instanceCount * instanceSize
         if (vertexCount <= 0) return
         glDrawArrays(GL_TRIANGLES, 0, vertexCount)
+        Mesh.vertexCount += vertexCount
+        drawCallCount++
     }
 }

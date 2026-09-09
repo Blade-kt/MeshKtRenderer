@@ -87,11 +87,9 @@ fun sdf(image: BufferedImage): Texture = Mesh.ensureStateSetup {
         int("u_SDF_SCAN", SDF_SCAN)
     }
 
-    rent(Mesh::boundShader, shader) {
-        rent(Mesh::viewport, Vec4i.create(0, 0, dstWidth, dstHeight)) {
-            rent(Mesh::writeFramebuffer, framebuffer) {
-                Mesh.render(1)
-            }
+    rent(Mesh::viewport, Vec4i.create(0, 0, dstWidth, dstHeight)) {
+        rent(Mesh::writeFramebuffer, framebuffer) {
+            Mesh.render(shader, 1)
         }
     }
 
