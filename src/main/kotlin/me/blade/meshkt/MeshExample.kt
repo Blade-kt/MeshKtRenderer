@@ -4,6 +4,7 @@ import me.blade.meshkt.renderer.Mesh
 import me.blade.meshkt.renderer.engine.MatrixType
 import me.blade.meshkt.renderer.engine.MeshLines
 import me.blade.meshkt.renderer.engine.MeshUI
+import me.blade.meshkt.renderer.engine.font.buildGlyphMap
 import me.blade.meshkt.renderer.state.BlendFunc
 import me.blade.meshkt.renderer.util.vec.Vec2
 import org.joml.Matrix4f
@@ -11,9 +12,8 @@ import org.lwjgl.glfw.GLFW.*
 import org.lwjgl.opengl.GL
 import org.lwjgl.opengl.GL11C.*
 import org.lwjgl.system.MemoryStack
-import java.awt.Color
+import java.awt.Font
 import java.nio.IntBuffer
-import kotlin.math.sin
 import kotlin.properties.Delegates
 
 object MeshExample {
@@ -55,12 +55,14 @@ object MeshExample {
         MeshUI.bindMatrix(MatrixType.Projection, projection)
         MeshLines.projectionMatrix = projection
 
-        /*MeshUI.rect {
+        MeshUI.rect {
             pos1 = Vec2.create(10, 10)
             pos2 = Vec2.create(200, 100)
-        }*/
+            texture = buildGlyphMap(Font("Arial", Font.BOLD, 12)).texture
+            radius(10.0)
+        }
 
-        var y = 0.0
+        /*var y = 0.0
         repeat(10) {
             val size = (it + 1) * 10.0 + 5
 
@@ -70,7 +72,14 @@ object MeshExample {
                 height = size
                 y += size + 10.0
             }
-        }
+        }*/
+
+        /*var y0 = 0.0
+        repeat(16) {
+            val width = it.toDouble()
+            MeshLines.line(Vec2.create(30.0, 10.0 + y0), Vec2.create(200.0, 10.0 + y0 + 50), Color.WHITE, width)
+            y0 += width * 2 + 5
+        }*/
 
         MeshUI.flush()
         MeshLines.flush()

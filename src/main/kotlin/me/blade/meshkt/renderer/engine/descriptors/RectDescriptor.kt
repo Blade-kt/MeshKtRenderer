@@ -26,9 +26,9 @@ interface IRectDescriptor {
     fun colorH(colorL: Color, colorR: Color)
     fun colorV(colorT: Color, colorB: Color)
 
-    fun round(radius: Double)
-    fun roundH(radiusL: Double, radiusR: Double)
-    fun roundV(radiusT: Double, radiusB: Double)
+    fun radius(radius: Double)
+    fun radiusH(radiusL: Double, radiusR: Double)
+    fun radiusV(radiusT: Double, radiusB: Double)
 }
 
 class RectDescriptor : IRectDescriptor {
@@ -70,21 +70,21 @@ class RectDescriptor : IRectDescriptor {
         colorLeftBottom = colorB
     }
 
-    override fun round(radius: Double) {
+    override fun radius(radius: Double) {
         roundRadiusLeftTop = radius
         roundRadiusRightTop = radius
         roundRadiusRightBottom = radius
         roundRadiusLeftBottom = radius
     }
 
-    override fun roundH(radiusL: Double, radiusR: Double) {
+    override fun radiusH(radiusL: Double, radiusR: Double) {
         roundRadiusLeftTop = radiusL
         roundRadiusRightTop = radiusR
         roundRadiusRightBottom = radiusR
         roundRadiusLeftBottom = radiusL
     }
 
-    override fun roundV(radiusT: Double, radiusB: Double) {
+    override fun radiusV(radiusT: Double, radiusB: Double) {
         roundRadiusLeftTop = radiusT
         roundRadiusRightTop = radiusT
         roundRadiusRightBottom = radiusB
@@ -96,7 +96,7 @@ class RectDescriptor : IRectDescriptor {
         pos2 = Vec2.ZERO
 
         color(Color.WHITE)
-        round(0.0)
+        radius(0.0)
 
         texture = null
         textureUV0 = Vec2.ZERO

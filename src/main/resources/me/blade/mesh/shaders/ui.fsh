@@ -59,7 +59,7 @@ void main() {
         float sdf = min(max(q.x, q.y), 0.0) + length(max(q, 0.0)) - r.x;
 
         float smoothness = fwidth(sdf * 0.5 + 0.5);
-        float alpha = 1.0 - smoothstep(-smoothness, smoothness, sdf);
+        float alpha = 1.0 - linearstep(-smoothness, smoothness, sdf);
         vec4 rectColor = vec4(1.0, 1.0, 1.0, alpha);
 
         COLOR_ATTACHMENT0 = s_VERTEX_COLOR * textureColor * rectColor * scissor;
