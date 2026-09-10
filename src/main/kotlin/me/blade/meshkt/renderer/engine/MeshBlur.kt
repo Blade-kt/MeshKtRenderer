@@ -12,6 +12,7 @@ import me.blade.meshkt.renderer.objects.texture.properties.TextureWrap
 import me.blade.meshkt.renderer.util.resourceText
 import me.blade.meshkt.renderer.util.vec.Vec2
 import me.blade.meshkt.renderer.util.vec.Vec2i
+import me.blade.meshkt.renderer.util.vec.Vec4
 import me.blade.meshkt.renderer.util.vec.Vec4i
 import org.joml.Matrix4f
 import org.lwjgl.BufferUtils
@@ -23,6 +24,7 @@ import org.lwjgl.opengl.GL45C.glReadnPixels
 import java.awt.image.BufferedImage
 import java.io.File
 import javax.imageio.ImageIO
+import kotlin.math.min
 import kotlin.math.roundToInt
 import kotlin.math.sin
 
@@ -55,7 +57,14 @@ object MeshBlur : IRenderer {
 
     var projectionMatrix = Matrix4f()
 
-    fun blur(pos1: Vec2, pos2: Vec2, strength: Int, downscale: Int = 2) {
+    fun blur(
+        pos1: Vec2, pos2: Vec2,
+        roundRadiusRightBottom: Double,
+        roundRadiusRightTop: Double,
+        roundRadiusLeftBottom: Double,
+        roundRadiusLeftTop: Double,
+        strength: Int, downscale: Int = 2
+    ) {
         check(downscale >= 1) {
             "downscale must be >= 1"
         }
@@ -108,40 +117,54 @@ object MeshBlur : IRenderer {
         val fbo0Color = fbo0.attachments[FramebufferAttachment.Color0]!!
         val fbo1Color = fbo1.attachments[FramebufferAttachment.Color0]!!
 
-        blurShader.uniforms {
-            bindlessSampler("u_INPUT_TEXTURE", fbo0Color)
-            vec2("u_DIRECTION", 1.0, 0.0)
-        }
-        Mesh.writeFramebuffer = fbo1
-        Mesh.render(blurShader, 1)
-
-        repeat((strength - 1).coerceAtLeast(0)) {
+        fun horizontal() {
             blurShader.uniforms {
-                bindlessSampler("u_INPUT_TEXTURE", fbo1Color)
-                vec2("u_DIRECTION", 0.0, 1.0)
-            }
-            Mesh.writeFramebuffer = fbo0
-            Mesh.render(blurShader, 1)
-
-            blurShader.uniforms {
+                int("u_IS_FLUSH_DRAW", 0)
                 bindlessSampler("u_INPUT_TEXTURE", fbo0Color)
                 vec2("u_DIRECTION", 1.0, 0.0)
             }
+
             Mesh.writeFramebuffer = fbo1
             Mesh.render(blurShader, 1)
         }
 
-        blurShader.uniforms {
-            bindlessSampler("u_INPUT_TEXTURE", fbo1Color)
-            vec2("u_DIRECTION", 0.0, 1.0)
-            vec2("u_POS1", pos1.x, pos1.y)
-            vec2("u_POS2", pos2.x, pos2.y)
+        fun vertical(isFinal: Boolean = false) {
+
+            blurShader.uniforms {
+                bindlessSampler("u_INPUT_TEXTURE", fbo1Color)
+                vec2("u_DIRECTION", 0.0, 1.0)
+
+                int("u_IS_FLUSH_DRAW", if (isFinal) 1 else 0)
+
+                if (isFinal) {
+                    vec2("u_POS1", pos1.x, pos1.y)
+                    vec2("u_POS2", pos2.x, pos2.y)
+                }
+
+                val maxRound = min((pos2.x - pos1.x), (pos2.y - pos1.y)) * 0.5
+                vec4("u_ROUND_RADIUS",
+                    roundRadiusRightBottom.coerceAtMost(maxRound),
+                    roundRadiusRightTop.coerceAtMost(maxRound),
+                    roundRadiusLeftBottom.coerceAtMost(maxRound),
+                    roundRadiusLeftTop.coerceAtMost(maxRound)
+                )
+            }
+
+            if (isFinal) Mesh.viewport = prevViewport
+            Mesh.writeFramebuffer = if (isFinal) prevFramebuffer else fbo1
+            Mesh.render(blurShader, 1)
         }
 
-        Mesh.viewport = prevViewport
-        Mesh.writeFramebuffer = prevFramebuffer
-        Mesh.render(blurShader, 1)
+        horizontal()
+        repeat((strength - 1).coerceAtLeast(0)) {
+            vertical()
+            horizontal()
+        }
+        // technically blending MUST be enabled here
+        // but user should be responsible for that, not the engine, so yeah
 
+        // TODO: separate pass to blit to main framebuffer
+        vertical(true)
         Mesh.blend = prevBlend
         Mesh.depthTest = prevDepthTest
     }

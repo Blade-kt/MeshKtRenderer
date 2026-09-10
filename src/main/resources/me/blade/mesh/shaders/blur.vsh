@@ -6,7 +6,9 @@ uniform vec2 u_POS2;
 
 flat out vec2 s_MIN_UV;
 flat out vec2 s_MAX_UV;
+flat out vec2 s_RECT_SIZE;
 out vec2 s_SAMPLER_UV;
+out vec2 s_INSTANCE_UV;
 
 void main() {
     int globalInstanceIndex = gl_VertexID / 6;
@@ -21,4 +23,6 @@ void main() {
     vec2 pos = mix(u_POS1, u_POS2, uv01);
     gl_Position = u_PROJECTION_MATRIX * vec4(pos, 0.0, 1.0);
     s_SAMPLER_UV = gl_Position.xy * 0.5 + 0.5;
+    s_INSTANCE_UV = uv01;
+    s_RECT_SIZE = u_POS2 - u_POS1;
 }

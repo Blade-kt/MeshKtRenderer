@@ -62,15 +62,16 @@ object MeshExample {
         MeshUI.rect {
             pos1 = Vec2.create(10.0, 10.0)
             pos2 = Vec2.create(300.0, 200.0)
-            colorV(Color.ORANGE, Color.BLUE)
-            radius(30.0)
+            colorV(Color.GREEN, Color.BLUE)
+            radius(0.0)
         }
 
         MeshBlur.projectionMatrix = projection
         MeshBlur.blur(
-            Vec2.create(1.0, 1.0),
+            Vec2.create(0.0, 0.0),
             Vec2.create(100, 100),
-            2, 2
+            0.0, 0.0, 0.0, 0.0,
+            1, 5
         )
 
         Mesh.flushRemaining()
