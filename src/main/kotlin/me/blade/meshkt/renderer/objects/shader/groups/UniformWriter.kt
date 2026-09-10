@@ -1,5 +1,6 @@
 package me.blade.meshkt.renderer.objects.shader.groups
 
+import me.blade.meshkt.renderer.Mesh
 import me.blade.meshkt.renderer.objects.shader.Shader
 import me.blade.meshkt.renderer.objects.texture.Texture
 import me.blade.meshkt.renderer.objects.texture.properties.TextureSlot
@@ -16,6 +17,9 @@ class UniformWriter(private val shader: Shader) {
     }
 
     fun bindlessSampler(name: String, texture: Texture) {
+        check(Mesh.boundShader == shader) {
+            "glProgramUniformHandleui64ARB requires shader program to be bound"
+        }
         glProgramUniformHandleui64ARB(shader.id, getUniformLocation(name), texture.bindlessHandle)
     }
 

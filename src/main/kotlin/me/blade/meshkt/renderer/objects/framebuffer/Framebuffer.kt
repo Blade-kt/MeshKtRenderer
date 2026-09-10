@@ -10,7 +10,6 @@ import me.blade.meshkt.renderer.util.Quad
 import org.lwjgl.opengl.ARBFramebufferObject.GL_FRAMEBUFFER
 import org.lwjgl.opengl.ARBFramebufferObject.glDeleteFramebuffers
 import org.lwjgl.opengl.GL45C.*
-import java.nio.FloatBuffer
 import kotlin.collections.component1
 import kotlin.collections.component2
 import kotlin.properties.Delegates
@@ -81,7 +80,7 @@ open class Framebuffer(externalId: Int?) : ObjectHandle(
     }
 
     fun blitTo(
-        target: Framebuffer?,
+        destination: Framebuffer?,
 
         srcX: Int = 0,
         srcY: Int = 0,
@@ -98,7 +97,32 @@ open class Framebuffer(externalId: Int?) : ObjectHandle(
     ) {
         glBlitNamedFramebuffer(
             id,
-            target?.id ?: 0,
+            destination?.id ?: 0,
+            srcX, srcY, srcX + srcWidth, srcY + srcHeight,
+            dstX, dstY, dstX + dstWidth, dstY + dstHeight,
+            mask, filter.gl
+        )
+    }
+
+    fun blitFrom(
+        source: Framebuffer?,
+
+        srcX: Int = 0,
+        srcY: Int = 0,
+        srcWidth: Int,
+        srcHeight: Int,
+
+        dstX: Int = srcX,
+        dstY: Int = srcY,
+        dstWidth: Int = srcWidth,
+        dstHeight: Int = srcHeight,
+
+        mask: Int = GL_COLOR_BUFFER_BIT,
+        filter: TextureMagFilter = TextureMagFilter.Nearest,
+    ) {
+        glBlitNamedFramebuffer(
+            source?.id ?: 0,
+            id,
             srcX, srcY, srcX + srcWidth, srcY + srcHeight,
             dstX, dstY, dstX + dstWidth, dstY + dstHeight,
             mask, filter.gl

@@ -1,7 +1,6 @@
 package me.blade.meshkt.renderer
 
 import me.blade.meshkt.renderer.engine.IRenderer
-import me.blade.meshkt.renderer.objects.createShader
 import me.blade.meshkt.renderer.objects.externalFramebuffer
 import me.blade.meshkt.renderer.objects.shader.Shader
 import me.blade.meshkt.renderer.state.StateManager
@@ -103,16 +102,26 @@ object Mesh {
         shader: Shader,
         instanceCount: Int,
         instanceSize: Int = 6
+    ) = renderRange(shader, 0, instanceCount, instanceSize)
+
+    fun renderRange(
+        shader: Shader,
+        firstInstance: Int,
+        instanceCount: Int,
+        instanceSize: Int = 6
     ) {
         stateManager.validate()
 
         boundShader = shader
         shader.storage.applyBindings()
 
-        val vertexCount = instanceCount * instanceSize
-        if (vertexCount <= 0) return
-        glDrawArrays(GL_TRIANGLES, 0, vertexCount)
-        Mesh.vertexCount += vertexCount
+        if (instanceCount <= 0) return
+        glDrawArrays(
+            GL_TRIANGLES,
+            firstInstance * instanceSize,
+            instanceCount * instanceSize
+        )
+        vertexCount += instanceCount * instanceSize
         drawCallCount++
     }
 }

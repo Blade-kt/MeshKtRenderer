@@ -1,5 +1,6 @@
 package me.blade.meshkt.renderer.objects.shader
 
+import me.blade.meshkt.renderer.Mesh
 import me.blade.meshkt.renderer.objects.ObjectHandle
 import me.blade.meshkt.renderer.objects.shader.groups.ShaderStorageBindings
 import me.blade.meshkt.renderer.objects.shader.groups.UniformWriter

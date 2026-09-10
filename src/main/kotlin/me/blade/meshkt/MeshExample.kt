@@ -2,6 +2,7 @@ package me.blade.meshkt
 
 import me.blade.meshkt.renderer.Mesh
 import me.blade.meshkt.renderer.engine.MatrixType
+import me.blade.meshkt.renderer.engine.MeshBlur
 import me.blade.meshkt.renderer.engine.MeshLines
 import me.blade.meshkt.renderer.engine.MeshUI
 import me.blade.meshkt.renderer.engine.font.buildGlyphMap
@@ -37,32 +38,17 @@ object MeshExample {
         mainEntry()
     }
 
-    val fbo by lazy {
-        createViewportFramebuffer {
-            attachments[FramebufferAttachment.Color0] = createTexture {
-                storage.internalFormat = TextureInternalFormat.RGBA8
-            }
-
-            drawTargets = arrayOf(FramebufferAttachment.Color0)
-        }
-    }
-
     fun frame() {
         val projection = Matrix4f().ortho(
             0f, viewportWidth.toFloat(),
             viewportHeight.toFloat(), 0f,
-            -1f, 1f
+            -1000f, 1000f
         )
 
         Mesh.frameBegin()
         Mesh.setupState()
 
-        val viewport0 = Vec2i.create(viewportWidth, viewportHeight)
-        val viewport1 = Vec2i.create(viewportWidth * 2, viewportHeight * 2)
-        fbo.update(viewport1)
-        fbo.clearAttachments(FramebufferAttachment.Color0)
-        Mesh.viewport = Vec4i.create(0, 0, viewport1.x, viewport1.y)
-
+        Mesh.depthTest = true
         Mesh.blend = true
         Mesh.blendFunc = BlendFunc.CLASSIC
 
@@ -72,31 +58,27 @@ object MeshExample {
         MeshUI.bindMatrix(MatrixType.Projection, projection)
         MeshLines.projectionMatrix = projection
 
-        rent(Mesh::writeFramebuffer, fbo) {
-            var y = 0.0
-            repeat(20) {
-                val size = (it + 1) * 3.0
+        var y = 0.0
+        repeat(20) {
+            val size = (it + 1) * 3.0
 
-                MeshUI.text {
-                    content = "Height: $size"
-                    pos = Vec2.create(10.0, 10.0 + y)
-                    height = size
-                }
-
-                y += size + 10.0
+            MeshUI.text {
+                content = "Height: $size"
+                pos = Vec2.create(10.0, 10.0 + y)
+                height = size
             }
 
-            Mesh.flushRemaining()
+            y += size + 10.0
         }
 
-        Mesh.viewport = Vec4i.create(0, 0, viewport0.x, viewport0.y)
-        fbo.blitTo(
-            null,
-            srcWidth = viewport1.x, srcHeight = viewport1.y,
-            dstWidth = viewport0.x, dstHeight = viewport0.y,
-            filter = TextureMagFilter.Linear
+        MeshBlur.projectionMatrix = projection
+        MeshBlur.blur(
+            Vec2.create(0.0, 0.0),
+            Vec2.create(viewportWidth.toDouble() / 2, viewportHeight.toDouble() / 2),
+            2
         )
 
+        Mesh.flushRemaining()
         Mesh.revertState()
     }
 

@@ -78,6 +78,7 @@ fun sdf(image: BufferedImage): Texture = Mesh.ensureStateSetup {
 
     Mesh.boundTexture[TextureSlot.Slot0] = inputTexture
 
+
     shader.uniforms {
         sampler("u_FONT_TEXTURE", TextureSlot.Slot0)
         mat4("u_MATRIX", Matrix4f().ortho(0f, dstWidth.toFloat(), 0f, dstHeight.toFloat(), -1f, 1f))
