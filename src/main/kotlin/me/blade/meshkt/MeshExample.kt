@@ -26,6 +26,7 @@ import org.lwjgl.system.MemoryStack
 import java.awt.Color
 import java.awt.Font
 import java.nio.IntBuffer
+import kotlin.math.round
 import kotlin.properties.Delegates
 
 object MeshExample {
@@ -58,24 +59,18 @@ object MeshExample {
         MeshUI.bindMatrix(MatrixType.Projection, projection)
         MeshLines.projectionMatrix = projection
 
-        var y = 0.0
-        repeat(20) {
-            val size = (it + 1) * 3.0
-
-            MeshUI.text {
-                content = "Height: $size"
-                pos = Vec2.create(10.0, 10.0 + y)
-                height = size
-            }
-
-            y += size + 10.0
+        MeshUI.rect {
+            pos1 = Vec2.create(10.0, 10.0)
+            pos2 = Vec2.create(300.0, 200.0)
+            colorV(Color.ORANGE, Color.BLUE)
+            radius(30.0)
         }
 
         MeshBlur.projectionMatrix = projection
         MeshBlur.blur(
-            Vec2.create(0.0, 0.0),
-            Vec2.create(viewportWidth.toDouble() / 2, viewportHeight.toDouble() / 2),
-            2
+            Vec2.create(1.0, 1.0),
+            Vec2.create(100, 100),
+            2, 2
         )
 
         Mesh.flushRemaining()

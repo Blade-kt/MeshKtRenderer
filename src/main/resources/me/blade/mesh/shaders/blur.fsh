@@ -5,6 +5,8 @@ uniform vec2 u_TEXEL_SIZE;
 uniform vec2 u_DIRECTION;
 layout(bindless_sampler) uniform sampler2D u_INPUT_TEXTURE;
 
+flat in vec2 s_MIN_UV;
+flat in vec2 s_MAX_UV;
 in vec2 s_SAMPLER_UV;
 out layout(location = 0) vec4 COLOR_ATTACHMENT0;
 
@@ -19,8 +21,7 @@ const float WEIGHTS[5] = float[](
 void main() {
     vec2 offset = u_DIRECTION * u_TEXEL_SIZE;
 
-    vec4 original = texture(u_INPUT_TEXTURE, s_SAMPLER_UV);
-    vec4 result = original * WEIGHTS[0];
+    vec4 result = texture(u_INPUT_TEXTURE, s_SAMPLER_UV) * WEIGHTS[0];
 
     result += texture(u_INPUT_TEXTURE, s_SAMPLER_UV + offset) * WEIGHTS[1];
     result += texture(u_INPUT_TEXTURE, s_SAMPLER_UV - offset) * WEIGHTS[1];
