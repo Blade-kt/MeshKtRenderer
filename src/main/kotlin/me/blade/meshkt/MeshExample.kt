@@ -49,7 +49,7 @@ object MeshExample {
         Mesh.frameBegin()
         Mesh.setupState()
 
-        Mesh.depthTest = true
+        Mesh.depthTest = false
         Mesh.blend = true
         Mesh.blendFunc = BlendFunc.CLASSIC
 
@@ -58,21 +58,9 @@ object MeshExample {
 
         MeshUI.bindMatrix(MatrixType.Projection, projection)
         MeshLines.projectionMatrix = projection
-
-        MeshUI.rect {
-            pos1 = Vec2.create(10.0, 10.0)
-            pos2 = Vec2.create(300.0, 200.0)
-            colorV(Color.GREEN, Color.BLUE)
-            radius(0.0)
-        }
-
         MeshBlur.projectionMatrix = projection
-        MeshBlur.blur(
-            Vec2.create(0.0, 0.0),
-            Vec2.create(100, 100),
-            0.0, 0.0, 0.0, 0.0,
-            1, 5
-        )
+
+        LayoutTest.frame()
 
         Mesh.flushRemaining()
         Mesh.revertState()
