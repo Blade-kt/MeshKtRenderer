@@ -55,6 +55,10 @@ class Buffer(initialCapacity: Long, private val fixed: Boolean) : ObjectHandle(g
         memPutByte(cursor, value)
     }
 
+    fun short(value: Short) = write(2) {
+        memPutShort(cursor, value)
+    }
+
     fun long(value: Long) = write(8) {
         memPutAddress(cursor, value)
     }

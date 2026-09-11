@@ -6,6 +6,7 @@ import me.blade.meshkt.renderer.engine.MeshBlur
 import me.blade.meshkt.renderer.engine.MeshLines
 import me.blade.meshkt.renderer.engine.MeshUI
 import me.blade.meshkt.renderer.engine.font.buildGlyphMap
+import me.blade.meshkt.renderer.engine.font.fastSDF
 import me.blade.meshkt.renderer.objects.createTexture
 import me.blade.meshkt.renderer.objects.createViewportFramebuffer
 import me.blade.meshkt.renderer.objects.framebuffer.properties.FramebufferAttachment
@@ -36,7 +37,8 @@ object MeshExample {
 
     @JvmStatic
     fun main(args: Array<String>) {
-        mainEntry()
+        fastSDF(buildGlyphMap(Font("Arial", Font.PLAIN, 512)).image)
+        //mainEntry()
     }
 
     fun frame() {
@@ -71,7 +73,7 @@ object MeshExample {
             Vec2.create(0.0, 0.0),
             Vec2.create(100, 100),
             0.0, 0.0, 0.0, 0.0,
-            1, 5
+            4,
         )
 
         Mesh.flushRemaining()

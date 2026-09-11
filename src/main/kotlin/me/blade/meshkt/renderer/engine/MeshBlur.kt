@@ -4,33 +4,26 @@ import me.blade.meshkt.renderer.Mesh
 import me.blade.meshkt.renderer.objects.createShader
 import me.blade.meshkt.renderer.objects.createTexture
 import me.blade.meshkt.renderer.objects.createViewportFramebuffer
-import me.blade.meshkt.renderer.objects.framebuffer.ViewportFramebuffer
 import me.blade.meshkt.renderer.objects.framebuffer.properties.FramebufferAttachment
 import me.blade.meshkt.renderer.objects.texture.properties.TextureInternalFormat
 import me.blade.meshkt.renderer.objects.texture.properties.TextureMagFilter
+import me.blade.meshkt.renderer.objects.texture.properties.TextureMinFilter
 import me.blade.meshkt.renderer.objects.texture.properties.TextureWrap
 import me.blade.meshkt.renderer.util.resourceText
 import me.blade.meshkt.renderer.util.vec.Vec2
 import me.blade.meshkt.renderer.util.vec.Vec2i
-import me.blade.meshkt.renderer.util.vec.Vec4
 import me.blade.meshkt.renderer.util.vec.Vec4i
 import org.joml.Matrix4f
-import org.lwjgl.BufferUtils
-import org.lwjgl.glfw.GLFW.glfwGetTime
-import org.lwjgl.opengl.ARBDirectStateAccess.glNamedFramebufferReadBuffer
-import org.lwjgl.opengl.GL11.GL_RGBA
-import org.lwjgl.opengl.GL11.GL_UNSIGNED_BYTE
-import org.lwjgl.opengl.GL45C.glReadnPixels
-import java.awt.image.BufferedImage
-import java.io.File
-import javax.imageio.ImageIO
 import kotlin.math.min
 import kotlin.math.roundToInt
-import kotlin.math.sin
 
 object MeshBlur : IRenderer {
     private val fbo0 = createViewportFramebuffer {
         attachments[FramebufferAttachment.Color0] = createTexture {
+            filtering {
+                minFilter = TextureMinFilter.Linear
+                magFilter = TextureMagFilter.Linear
+            }
             storage.internalFormat = TextureInternalFormat.RGBA8
             wrapping.wrapS = TextureWrap.ClampToEdge
             wrapping.wrapT = TextureWrap.ClampToEdge
@@ -41,6 +34,10 @@ object MeshBlur : IRenderer {
 
     private val fbo1 = createViewportFramebuffer {
         attachments[FramebufferAttachment.Color0] = createTexture {
+            filtering {
+                minFilter = TextureMinFilter.Linear
+                magFilter = TextureMagFilter.Linear
+            }
             storage.internalFormat = TextureInternalFormat.RGBA8
             wrapping.wrapS = TextureWrap.ClampToEdge
             wrapping.wrapT = TextureWrap.ClampToEdge
@@ -63,19 +60,20 @@ object MeshBlur : IRenderer {
         roundRadiusRightTop: Double,
         roundRadiusLeftBottom: Double,
         roundRadiusLeftTop: Double,
-        strength: Int, downscale: Int = 2
+        downscale: Int = 2
     ) {
         check(downscale >= 1) {
             "downscale must be >= 1"
         }
-        if (strength <= 0) return
 
         Mesh.signal(this)
 
-        val prevFramebuffer = Mesh.writeFramebuffer
-        val prevDepthTest = Mesh.depthTest
-        val prevBlend = Mesh.blend
-        val prevViewport = Mesh.viewport
+        val initialState = object {
+            val framebuffer = Mesh.writeFramebuffer
+            val depthTest = Mesh.depthTest
+            val blend = Mesh.blend
+            val viewport = Mesh.viewport
+        }
 
         Mesh.boundShader = blurShader
         Mesh.depthTest = false
@@ -84,7 +82,7 @@ object MeshBlur : IRenderer {
         blurShader.uniforms {
             mat4("u_PROJECTION_MATRIX", projectionMatrix)
 
-            val expand = strength * 5 * downscale
+            val expand = 5 * downscale
             vec2("u_POS1", pos1.x - expand, pos1.y - expand)
             vec2("u_POS2", pos2.x + expand, pos2.y + expand)
         }
@@ -100,7 +98,7 @@ object MeshBlur : IRenderer {
         fbo1.clearAttachments(FramebufferAttachment.Color0)
 
         fbo0.blitFrom(
-            prevFramebuffer,
+            initialState.framebuffer,
             0, 0,
             viewportSize.x, viewportSize.y,
             0, 0,
@@ -129,7 +127,6 @@ object MeshBlur : IRenderer {
         }
 
         fun vertical(isFinal: Boolean = false) {
-
             blurShader.uniforms {
                 bindlessSampler("u_INPUT_TEXTURE", fbo1Color)
                 vec2("u_DIRECTION", 0.0, 1.0)
@@ -150,23 +147,21 @@ object MeshBlur : IRenderer {
                 )
             }
 
-            if (isFinal) Mesh.viewport = prevViewport
-            Mesh.writeFramebuffer = if (isFinal) prevFramebuffer else fbo1
+            if (isFinal) Mesh.viewport = initialState.viewport
+            Mesh.writeFramebuffer = if (isFinal) initialState.framebuffer else fbo1
             Mesh.render(blurShader, 1)
         }
 
         horizontal()
-        repeat((strength - 1).coerceAtLeast(0)) {
-            vertical()
-            horizontal()
-        }
         // technically blending MUST be enabled here
         // but user should be responsible for that, not the engine, so yeah
 
         // TODO: separate pass to blit to main framebuffer
+        // required by rounding corners
+
         vertical(true)
-        Mesh.blend = prevBlend
-        Mesh.depthTest = prevDepthTest
+        Mesh.blend = initialState.blend
+        Mesh.depthTest = initialState.depthTest
     }
 
     override fun flush() {}

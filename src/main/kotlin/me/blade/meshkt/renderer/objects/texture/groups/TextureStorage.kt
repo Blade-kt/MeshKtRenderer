@@ -39,6 +39,9 @@ class TextureStorage(private val texture: Texture) {
 
         check(width > 0) { "upload(): Width must be > 0" }
         check(height > 0) { "upload(): Height must be > 0" }
+
+        glPixelStorei(GL_UNPACK_ALIGNMENT, pf.componentCount)
         glTextureSubImage2D(texture.id, level, offsetX, offsetY, width, height, pf.gl, pt.gl, pointer)
+        glPixelStorei(GL_UNPACK_ALIGNMENT, 4)
     }
 }

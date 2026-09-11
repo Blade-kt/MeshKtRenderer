@@ -1,5 +1,6 @@
 package me.blade.meshkt.renderer.engine.font
 
+import me.blade.meshkt.renderer.objects.externalTexture
 import me.blade.meshkt.renderer.objects.texture.Texture
 import java.awt.Color
 import java.awt.Font
@@ -27,6 +28,7 @@ private val supportedCharacters = buildString {
 
 data class GlyphMap(
     val texture: Texture,
+    val image: BufferedImage,
     val normalizedCenter: Double,
     val charData: Map<Char, GlyphData>
 ) {
@@ -91,8 +93,8 @@ fun buildGlyphMap(fontIn: Font): GlyphMap {
     graphics.dispose()
 
     val center = (metrics.ascent + metrics.descent) * 0.5 / metrics.height
-    val texture = sdf(image)
-    return GlyphMap(texture, center, charMap)
+    //val texture = sdf(image)
+    return GlyphMap(externalTexture(0), image,center, charMap)
 }
 
 private fun getRenderPositions(chars: List<BufferedImage>, rowHeight: Int, minSize: Int = 128): Pair<ArrayList<Pair<Int, Int>>, Int> {
